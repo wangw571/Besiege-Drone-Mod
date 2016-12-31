@@ -3,103 +3,29 @@ using spaar.ModLoader;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
+
 namespace Besiege_Drone_Mod
 {
-
-    // If you need documentation about any of these values or the mod loader
-    // in general, take a look at https://spaar.github.io/besiege-modloader.
-
-
-    /// <summary>
-    /// Note: 
-    /// HP: The HP will be limited as an square of an acceleration, as (a+b)^2 < a^2 + b^2
-    /// Radar: The radar detective distance will change as the velocity changes. 
-    /// 
-    /// 
-    /// Basic Behavior:
-    /// 1.Exist, as decloak
-    /// 2.Select Target, 
-    ///     Explosives first, bombs, tracking computers first, grenade and rocket will be selected as the ammunation is possible to ignite them. 
-    ///     Other aggressive second, include cannon, watercannon and flamethrower
-    ///         -Mainly select the joint between aggressive block and vulnerable blocks.
-    ///         -If connected by Grabber, find the chain of the end and destory that
-    ///             -If multiple connected, ignore this target if possible.
-    ///     Machanic blocks after, mainly focus on wheel(CogMotor), piston, suspension, flying block, hinge
-    ///     Aeromatic propeller, wings and non-powered wheels, as well as structures as last. 
-    ///     
-    ///     -Not ignoring incoming only if HP is low enough that a crash can disable it
-    ///         -Set it with make flame effect and non-fireable and explode after it crash.
-    ///     -When close enough to an incoming at the front (velocity,sqrmagnitude * 3), to 5
-    /// 3.Set navigation destination and attack
-    ///     Attack by projectiles.
-    /// 4.Maybe - Switch target every 10 second.
-    /// 5.After target destoryed/close enough
-    ///     - Switch if attitude is allowed(higher than velocity,sqrmagnitude * 3) and target is far enough(velocity,sqrmagnitude * 8)
-    ///     - Escape 
-    /// 6.Climb to sky is clear, set as direction + 500 Y, else keep curise flight and not ignoring incoming. 
-    /// 
-    /// 
-    /// </summary>
-
-    public class DroneMod : Mod
-    {
-        public override string Name { get; } = "Drone_Deployment_Block";
-        public override string DisplayName { get; } = "Drone Deployment Block";
-        public override string Author { get; } = "wang_w571";
-        public override Version Version { get; } = new Version("0.1");
-
-        public override void OnLoad()
-        {
-            // Your initialization code here
-        }
-
-        public override void OnUnload()
-        {
-            // Your code here
-            // e.g. save configuration, destroy your objects if CanBeUnloaded is true etc
-        }
-    }
-
-    public class DroneDeployBlockBehavior : BlockScript
-    {
-        MKey Activation;
-        MKey Engage;
-        MKey ForceEngage;
-        MMenu DroneAIType;
-        MMenu DroneSize;
-        MMenu Difficulty;
-
-        public override void SafeAwake()
-        {
-            Activation = new MKey("Activate Spawning Drones", "Activate", KeyCode.P);
-            Activation.DisplayInMapper = false;
-            Engage = new MKey("Engage", "Engage", KeyCode.T);
-            ForceEngage = new MKey("Forced Engege", "FEngage", KeyCode.X);
-            DroneAIType = new MMenu("AIType", 0, new List<string>() { "Assistantnce", "Aggressive", "Practice" });
-        }
-        protected override void BuildingUpdate()
-        {
-
-
-        }
-
-    }
-
     public class DroneStandardConputingScript : MonoBehaviour
     {
+        public DroneDeployBlockBehavior Parent;
         protected int iterativeCount = 0;
         protected GameObject currentTarget;
         protected Vector3 targetPoint;
+        protected Vector3 targetVeloRecorder;
         protected float 炮弹速度;
         protected Vector3 前一帧速度;
         protected float 目标前帧速度Mag;
         protected float MyPrecision;
-        protected int MySize;
-        protected float 精度;
-        protected float size;
+        public int MySize;
+        public float 精度;
+        public float size;
         protected GameObject IncomingDetection;
         protected IncomingDetectionScript IDS;
         protected bool IgnoreIncoming = false;
+
+        public float HitPoints;
+        public Vector3 VelocityRecorder;
 
 
         protected Vector2 formulaProjectile(float X, float Y, float V, float G)
@@ -407,204 +333,34 @@ namespace Besiege_Drone_Mod
             前一帧速度 = GetComponent<Rigidbody>().velocity;
             return LocalTargetDirection;
         }
-        protected Vector3 RelativeAvenueOfPoints(List<Vector3> Vector3s, float SphereSize)
+        protected Vector3 RelativeAverageOfPoints(List<Vector3> Vector3s, float SphereSize)
         {
             Vector3 V3 = this.transform.forward;
             if (Vector3s.Count > 0)
             {
                 foreach (Vector3 VT3 in Vector3s)
                 {
-                    Vector3 RealVT3 = (this.transform.position - VT3);
-                    RealVT3 = RealVT3.normalized * (SphereSize - Vector3.Distance(this.transform.position, VT3));
+                    Vector3 RealVT3 = (this.transform.InverseTransformPoint(VT3));
+                    RealVT3 = RealVT3.normalized * (SphereSize * SphereSize - RealVT3.sqrMagnitude);
                     V3 = Vector3.Lerp(V3, RealVT3, 0.5f);
                 }
             }
             return V3;
         }
-    }
 
-    public class IncomingDetectionScript : MonoBehaviour
-    {
-        public Collider Main;
-        public List<Vector3> IncomingPositions;
-        public bool SomethingInMyRange = false;
-        public float SphereSize;
-        public float VerticalPrecisionInDegree = 15;
-        public float HorizontalPrecisionInDegree = 15;
-        public bool UseRadarDetection = false;
-        void FixedUpdate()
+        public void SetUpHP(float BaseAcceleration)
         {
-            IncomingPositions = new List<Vector3>();
-            if(UseRadarDetection)
-            {
-                List<Vector3> collidingPoints = RegularSphereScan(this.transform.position, VerticalPrecisionInDegree, HorizontalPrecisionInDegree, SphereSize, this.gameObject.layer);
-                if (collidingPoints.Count != 0)
-                {
-                    IncomingPositions.AddRange(collidingPoints);
-                }
-                UseRadarDetection = false;
-            }
-            SomethingInMyRange = false;
+            this.HitPoints = BaseAcceleration * BaseAcceleration;
         }
-
-        void OnTriggerStay(Collider coll)
+        protected void HPCalculation(float MinimumCalcAcceleration)
         {
-            if (coll == Main || coll.isTrigger)
+            Vector3 VelocityNow = this.GetComponent<Rigidbody>().velocity;
+            float AccelerationAmountSqr = (VelocityNow - VelocityRecorder).sqrMagnitude;
+            if (AccelerationAmountSqr >= MinimumCalcAcceleration * MinimumCalcAcceleration)
             {
-                return;
+                HitPoints -= AccelerationAmountSqr;
             }
-
-            Vector3 ClosestTemp = coll.ClosestPointOnBounds(this.transform.position);
-            float LongestGasp = SphereSize * Mathf.Sin(Mathf.Deg2Rad * Mathf.Max(VerticalPrecisionInDegree, HorizontalPrecisionInDegree));
-            RaycastHit hito;
-            if(
-                (coll.GetType() == typeof(SphereCollider) && coll.gameObject.GetComponent<SphereCollider>().radius <= LongestGasp / 2) ||
-                (coll.GetType() == typeof(BoxCollider) && coll.gameObject.GetComponent<BoxCollider>().size.sqrMagnitude <= LongestGasp) ||
-                (coll.GetType() == typeof(CapsuleCollider) && coll.gameObject.GetComponent<CapsuleCollider>().radius <= LongestGasp / 2 && coll.gameObject.GetComponent<CapsuleCollider>().height <= LongestGasp)
-                ) {
-
-            }
-            else if (this.GetComponent<Collider>().Raycast(new Ray(this.transform.position, this.transform.InverseTransformPoint(ClosestTemp).normalized * SphereSize), out hito, SphereSize))
-            {
-                if (hito.collider == coll)
-                {
-                    IncomingPositions.Add(ClosestTemp);
-                    SomethingInMyRange = true;
-                    return;
-                }
-            }
-            //if(coll.GetComponent<MeshFilter>())
-            //{
-            //    Vector3[] Vertics = coll.GetComponent<MeshFilter>().mesh.vertices;
-            //}
-            SomethingInMyRange = true;
-        }
-
-        List<Vector3> RegularSphereScan(Vector3 StartPoint, float HorizontalDegreePrecision, float VerticalDegreePrecision, float Distance, int IgnoreLayer)
-        {
-            List<Vector3> HitPoints = new List<Vector3>();
-            RaycastHit hito;
-            for (float Vi = VerticalDegreePrecision; Vi < 360; Vi += VerticalDegreePrecision)
-            {
-                for (float Hi = 0; Hi < 360; Hi += HorizontalDegreePrecision)
-                {
-                    //float elevation = Hi * Mathf.Deg2Rad;
-                    //float heading = Vi * Mathf.Deg2Rad;
-                    Ray rayray = new Ray(StartPoint, EulerToDirection(Hi,Vi));
-                    if (Physics.Raycast(rayray, out hito, SphereSize,IgnoreLayer))
-                    {
-                        HitPoints.Add(hito.point);
-                    }
-                }
-            }
-            return HitPoints;
-        }
-        Vector3[] ClosestVecctor3(List<Vector3> WorldVectors, Vector3 StartPoint, int Counts)
-        {
-            Vector3[] Returner = new Vector3[Counts];
-            for (int i = 0; i < Returner.Length; ++i)
-            {
-                Returner[i] = Vector3.one * Mathf.Infinity;
-            }
-            foreach (Vector3 Point in WorldVectors)
-            {
-                WorldVectors.Sort();
-            }
-            foreach (Vector3 SinglePoint in WorldVectors)
-            {
-                for (int a = 0; a < Returner.Length; ++a)
-                {
-                    if (Vector3.SqrMagnitude(StartPoint - SinglePoint) < Vector3.SqrMagnitude(StartPoint - Returner[a]))
-                    {
-                        for (int i = Returner.Length - 1; i > a; --i)
-                        {
-                            Returner[i] = Returner[i - 1];
-                        }
-                        Returner[a] = SinglePoint;
-                        break;
-                    }
-                }
-            }
-            return Returner;
-        }
-
-        Vector3 EulerToDirection(float Elevation, float Heading)
-        {
-            float elevation = Elevation * Mathf.Deg2Rad;
-            float heading = Heading * Mathf.Deg2Rad;
-            return new Vector3(Mathf.Cos(elevation) * Mathf.Sin(heading), Mathf.Sin(elevation), Mathf.Cos(elevation) * Mathf.Cos(heading));
-        }
-    }
-
-    public class FullyAIDrone : DroneStandardConputingScript
-    {
-        int MissileGuidanceModeInt = 0;
-        int size = 1;
-        float 精度 = 0.02f;
-        int RotatingSpeed = 1;
-        float SphereSize = 15;
-
-        void FixedUpdate()
-        {
-            if (IncomingDetection == null)
-            {
-                IncomingDetection = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                IncomingDetection.layer = 15;
-                
-                Destroy(IncomingDetection.GetComponent<MeshRenderer>());
-                Destroy(IncomingDetection.GetComponent<Rigidbody>());
-                IDS = IncomingDetection.AddComponent<IncomingDetectionScript>();
-            }
-            Vector3 TargetDirection;
-
-            if (IDS.SomethingInMyRange && !IgnoreIncoming)
-            {
-                Vector3 LocalTargetDirection = this.transform.TransformPoint(RelativeAvenueOfPoints(IDS.IncomingPositions, SphereSize));
-
-                if (MissileGuidanceModeInt == 0)
-                {
-                    LocalTargetDirection = currentTarget.transform.position;
-                    LocalTargetDirection = DroneDirectionIndicator(LocalTargetDirection);
-                }
-
-                //this.transform.rotation.SetFromToRotation(this.transform.forward, LocalTargetDirection);
-                //Vector3 rooo = Vector3.RotateTowards(this.transform.forward, LocalTargetDirection - this.transform.position, RotatingSpeed * size, RotatingSpeed * size);
-                //Debug.Log(LocalTargetDirection + "and" + this.transform.up + "and" + rooo);
-                //this.transform.rotation = Quaternion.LookRotation(rooo);
-                //LocalTargetDirection = new Vector3(LocalTargetDirection.x, LocalTargetDirection.y - this.transform.position.y, LocalTargetDirection.z);
-                //float mag = (LocalTargetDirection.normalized - transform.forward.normalized).magnitude;
-                TargetDirection = (getCorrTorque(this.transform.forward, LocalTargetDirection - this.transform.position * 1, this.GetComponent<Rigidbody>(), 0.01f * size) * Mathf.Rad2Deg).normalized;
-
-                GetComponent<Rigidbody>().angularVelocity = (TargetDirection * RotatingSpeed);
-
-            }
-            else if (currentTarget)
-            {
-                if (currentTarget.GetComponent<Rigidbody>() && currentTarget.transform.position != this.transform.position)
-                {
-                    Vector3 LocalTargetDirection = currentTarget.transform.position;
-
-                    if (MissileGuidanceModeInt == 0)
-                    {
-                        LocalTargetDirection = currentTarget.transform.position;
-                        LocalTargetDirection = DroneDirectionIndicator(LocalTargetDirection);
-                    }
-
-                    //this.transform.rotation.SetFromToRotation(this.transform.forward, LocalTargetDirection);
-                    //Vector3 rooo = Vector3.RotateTowards(this.transform.forward, LocalTargetDirection - this.transform.position, RotatingSpeed * size, RotatingSpeed * size);
-                    //Debug.Log(LocalTargetDirection + "and" + this.transform.up + "and" + rooo);
-                    //this.transform.rotation = Quaternion.LookRotation(rooo);
-                    //LocalTargetDirection = new Vector3(LocalTargetDirection.x, LocalTargetDirection.y - this.transform.position.y, LocalTargetDirection.z);
-                    //float mag = (LocalTargetDirection.normalized - transform.forward.normalized).magnitude;
-                    TargetDirection = (getCorrTorque(this.transform.forward, LocalTargetDirection - this.transform.position * 1, this.GetComponent<Rigidbody>(), 0.01f * size) * Mathf.Rad2Deg).normalized;
-                    if (Vector3.Angle(transform.forward, LocalTargetDirection - this.transform.position * 1) < 105)
-                    {
-                        GetComponent<Rigidbody>().angularVelocity = (TargetDirection * RotatingSpeed);
-                    }
-                    else { Debug.Log("Target Lost!"); }
-                }
-            }
-            前一帧速度 = this.GetComponent<Rigidbody>().velocity;
+            VelocityRecorder = VelocityNow;
         }
     }
 }
