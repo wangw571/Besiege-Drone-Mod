@@ -2,8 +2,9 @@
 using spaar.ModLoader;
 using UnityEngine;
 using System.Collections.Generic;
+using TheGuysYouDespise;
 using System.Collections;
-namespace Besiege_Drone_Mod
+namespace Blocks
 {
 
     // If you need documentation about any of these values or the mod loader
@@ -36,22 +37,79 @@ namespace Besiege_Drone_Mod
     /// 5.After target destoryed/close enough
     ///     - Switch if attitude is allowed(higher than velocity,sqrmagnitude * 3) and target is far enough(velocity,sqrmagnitude * 8)
     ///     - Escape 
-    /// 6.Climb to sky is clear, set as direction + 500 Y, else keep curise flight and not ignoring incoming. 
+    /// 6.Climb to sky when is clear, set as direction + 500 Y, else keep curise flight and not ignoring incoming. 
     /// 
     /// Target Velocity: Use average velocity for 0.5 seconds
-    /// Orbiting Target should be perpendicular to the target if it's moving. 
+    /// Orbiting Target should be perpendicular to the target's velocity if it's moving. 
     /// </summary>
 
-    public class DroneMod : Mod
+    public class DroneMod : BlockMod
     {
         public override string Name { get; } = "Drone_Deployment_Block";
         public override string DisplayName { get; } = "Drone Deployment Block";
         public override string Author { get; } = "wang_w571";
         public override Version Version { get; } = new Version("0.1");
+        protected Block Block = new Block()
+            ///模块ID
+            .ID(575)
 
+            ///模块名称
+            //.BlockName("Tracking Computer I")
+            .BlockName("meow I")
+
+            ///模型信息
+            .Obj(new List<Obj> { new Obj("turret.obj", //Obj
+                                         "turret.png", //贴图 
+                                         new VisualOffset(new Vector3(1f, 1f, 1f), //Scale
+                                                          new Vector3(0f, 0f, 0f), //Position
+                                                          new Vector3(-90f, 0f, 0f)))//Rotation
+            })
+
+            ///在UI下方的选模块时的模样
+            .IconOffset(new Icon(new Vector3(1f, 1f, 1f),  //Scale
+                                 new Vector3(-0.11f, -0.13f, 0.00f),  //Position
+                                 new Vector3(350f, 150f, 250f))) //Rotation
+
+            ///没啥好说的。
+            .Components(new Type[] {
+                                    typeof(FullyAIDrone),
+            })
+
+            ///给搜索用的关键词
+            .Properties(new BlockProperties().SearchKeywords(new string[] {
+                                                             "Turret",
+                                                             "炮台",
+                                                             "导弹",
+                                                             "War",
+                                                             "Weapon"
+                                             }).Burnable(3)
+            )
+            ///质量
+            .Mass(2f)
+
+            ///是否显示碰撞器（在公开你的模块的时候记得写false）a
+            .ShowCollider(false)
+
+            ///碰撞器
+            .CompoundCollider(new List<ColliderComposite> {
+                ColliderComposite.Box(new Vector3(1f, 1f, 1.2f), new Vector3(0f, 0f, 0.6f), new Vector3(0f, 0f, 0f)),
+            })
+
+            ///你的模块是不是可以忽视强搭
+            //.IgnoreIntersectionForBase()
+
+            ///载入资源
+            .NeededResources(null)
+
+            ///连接点
+            .AddingPoints(new List<AddingPoint> {
+                               new BasePoint(true, false)         //底部连接点。第一个是指你能不能将其他模块安在该模块底部。第二个是指这个点是否是在开局时粘连其他链接点
+                                                .Motionable(true,true,true) //底点在X，Y，Z轴上是否是能够活动的。
+                                                .SetStickyRadius(0f)});
         public override void OnLoad()
         {
             // Your initialization code here
+            LoadBlock(Block);
         }
 
         public override void OnUnload()
@@ -61,7 +119,7 @@ namespace Besiege_Drone_Mod
         }
     }
 
-    public class DroneDeployBlockBehavior : BlockScript
+    public class DroneControlBlockBehavior : BlockScript
     {
         MKey Activation;
         MKey Engage;
@@ -74,6 +132,8 @@ namespace Besiege_Drone_Mod
         MSlider DroneAmount;
         MToggle ContinousSpawn;
         MSlider DroneTag;
+
+        GameObject DetectiveSphere;
         public override void SafeAwake()
         {
             Activation = new MKey("Activate Spawning Drones", "Activate", KeyCode.P);
@@ -111,22 +171,22 @@ namespace Besiege_Drone_Mod
         }
         protected override void OnSimulateFixedStart()
         {
-            for (int i = 0; i < DroneAmount.Value; ++i)
-            {
-                if (DroneAIType.Value == 1)
-                {
-                    if (Difficulty.Value == 0)
-                    {
-                        GameObject OneDrone = new GameObject(DroneTag.Value.ToString());
-                        //Collider, renderer, meshfilter things
-                        FullyAIDrone Script = OneDrone.AddComponent<FullyAIDrone>();
-                        Script.Parent = this;
-                        Script.SetUpHP(100000);
-                    }
-                }
-            }
+            /* for (int i = 0; i < DroneAmount.Value; ++i)
+             {
+                 if (DroneAIType.Value == 1)
+                 {
+                     if (Difficulty.Value == 0)
+                     {
+                         GameObject OneDrone = new GameObject(DroneTag.Value.ToString());
+                         //Collider, renderer, meshfilter things
+                         FullyAIDrone Script = OneDrone.AddComponent<FullyAIDrone>();
+                         Script.Parent = this;
+                         Script.SetUpHP(100000);
+                     }
+                 }
+             }*/
         }
     }
 
-    
+
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 
-namespace Besiege_Drone_Mod
+namespace Blocks
 {
     public class IncomingDetectionScript : MonoBehaviour
     {

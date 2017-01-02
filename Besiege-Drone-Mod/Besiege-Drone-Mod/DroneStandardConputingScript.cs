@@ -4,15 +4,19 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 
-namespace Besiege_Drone_Mod
+namespace Blocks
 {
-    public class DroneStandardConputingScript : MonoBehaviour
+
+    public class DroneStandardConputingScript : BlockScript
     {
-        public DroneDeployBlockBehavior Parent;
+        //public DroneControlBlockBehavior Parent;
+        protected GameObject Shooter;
+        protected CanonBlock CB;
         protected int iterativeCount = 0;
         protected GameObject currentTarget;
         protected Vector3 targetPoint;
         protected Vector3 targetVeloRecorder;
+        protected Vector3 targetVeloAveraged;
         protected float 炮弹速度;
         protected Vector3 前一帧速度;
         protected float 目标前帧速度Mag;
@@ -21,8 +25,10 @@ namespace Besiege_Drone_Mod
         public float 精度;
         public float size;
         protected GameObject IncomingDetection;
+        GameObject InstantPropeller;
         protected IncomingDetectionScript IDS;
         protected bool IgnoreIncoming = false;
+        protected Rigidbody rigidBody;
 
         public float HitPoints;
         public Vector3 VelocityRecorder;
@@ -188,7 +194,7 @@ namespace Besiege_Drone_Mod
             Vector3 hitPoint = Vector3.zero;
 
             iterativeCount++;
-            if (iterativeCount > 512) { iterativeCount = 0; return calculateLinearTrajectory(gunVelocity, gunPosition, TargetVelocity, targetPoint, TargetDirection); }
+            if (iterativeCount > 512) { iterativeCount = 0; return calculateLinearTrajectory(gunVelocity, gunPosition, TargetVelocity, TargetPosition, TargetDirection); }
 
             if (TargetVelocity != 0)
             {
@@ -203,7 +209,7 @@ namespace Besiege_Drone_Mod
 
                 if (DELTA < 0)
                 {
-                    return Vector3.zero;
+                    return calculateLinearTrajectory(gunVelocity, gunPosition, TargetVelocity, TargetPosition, TargetDirection);
                 }
 
                 float F1 = (-B + Mathf.Sqrt(B * B - 4 * A * C)) / (2 * A);
@@ -240,14 +246,23 @@ namespace Besiege_Drone_Mod
             }
             catch { return Vector3.zero; }
         }
-        protected AxialDrag AD;
 
-        void Start()
+        protected override void OnSimulateStart()
         {
-            AD = this.gameObject.AddComponent<AxialDrag>();
-            AD.AxisDrag = new Vector3(0, 0.015f, 0.015f);
-            AD.velocityCap = 300;
+            /*AD = this.gameObject.AddComponent<BxialDrag>();
+            InstantPropeller = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            DestroyImmediate(InstantPropeller.GetComponent<MeshCollider>());
+            DestroyImmediate(InstantPropeller.GetComponent<MeshRenderer>());
+            InstantPropeller.transform.position = new Vector3(0, 0, 1.5f);
+            InstantPropeller.transform.rotation = new Quaternion(0, 0, 0, 1);
+            AD.GB = this;
+            AD.upTransform = InstantPropeller.transform;
+            AD.AxisDrag = new Vector3(0, 0.2f, 0.2f);
+            AD.velocityCap = 30;
+            AD.block = this;
+            AD.dragAmount = 1;*/
             MyPrecision = MySize * 5;
+            rigidBody = this.GetComponent<Rigidbody>();
         }
         protected Vector3 CalculateTarget(Vector3 LocalTargetDirection, float FireProg)
         {
@@ -297,7 +312,7 @@ namespace Besiege_Drone_Mod
             炮弹速度 = this.GetComponent<Rigidbody>().velocity.magnitude;
             float targetVelo = currentTarget.GetComponent<Rigidbody>().velocity.magnitude;
             //Debug.Log((currentTarget.GetComponent<Rigidbody>().velocity - 前一帧速度).magnitude);
-            LocalTargetDirection = calculateNoneLinearTrajectoryWithAccelerationPrediction(
+            /*LocalTargetDirection = calculateNoneLinearTrajectoryWithAccelerationPrediction(
                 炮弹速度 + 0.001f,
                 (this.GetComponent<Rigidbody>().velocity - 前一帧速度).magnitude,
                 transform.position,
@@ -319,6 +334,24 @@ namespace Besiege_Drone_Mod
                             currentTarget.transform.position,
                             currentTarget.GetComponent<Rigidbody>().velocity.normalized),
                         size * 精度 + 10 * size
+                    ),
+                    Physics.gravity.y,
+                    size * 精度 + 10 * size,
+                    float.PositiveInfinity
+                    );*/
+            LocalTargetDirection = calculateNoneLinearTrajectory(
+                炮弹速度 + 0.000001f,
+                0.2f,
+                this.transform.position,
+                targetVelo,
+                currentTarget.transform.position,
+                currentTarget.GetComponent<Rigidbody>().velocity.normalized,
+                    calculateLinearTrajectory(
+                        炮弹速度 + 0.000001f,
+                        this.transform.position,
+                        targetVelo,
+                        currentTarget.transform.position,
+                        currentTarget.GetComponent<Rigidbody>().velocity.normalized
                     ),
                     Physics.gravity.y,
                     size * 精度 + 10 * size,
@@ -347,7 +380,6 @@ namespace Besiege_Drone_Mod
             }
             return V3;
         }
-
         public void SetUpHP(float BaseAcceleration)
         {
             this.HitPoints = BaseAcceleration * BaseAcceleration;
@@ -361,6 +393,12 @@ namespace Besiege_Drone_Mod
                 HitPoints -= AccelerationAmountSqr;
             }
             VelocityRecorder = VelocityNow;
+        }
+        public Vector3 EulerToDirection(float Elevation, float Heading)
+        {
+            float elevation = Elevation * Mathf.Deg2Rad;
+            float heading = Heading * Mathf.Deg2Rad;
+            return new Vector3(Mathf.Cos(elevation) * Mathf.Sin(heading), Mathf.Sin(elevation), Mathf.Cos(elevation) * Mathf.Cos(heading));
         }
     }
 }
