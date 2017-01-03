@@ -25,7 +25,6 @@ namespace Blocks
         public float 精度;
         public float size;
         protected GameObject IncomingDetection;
-        GameObject InstantPropeller;
         protected IncomingDetectionScript IDS;
         protected bool IgnoreIncoming = false;
         protected Rigidbody rigidBody;

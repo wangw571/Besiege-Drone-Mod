@@ -48,7 +48,7 @@ namespace Blocks
         public override string Name { get; } = "Drone_Deployment_Block";
         public override string DisplayName { get; } = "Drone Deployment Block";
         public override string Author { get; } = "wang_w571";
-        public override Version Version { get; } = new Version("0.1");
+        public override Version Version { get; } = new Version("0.2");
         protected Block Block = new Block()
             ///模块ID
             .ID(575)
@@ -60,8 +60,8 @@ namespace Blocks
             ///模型信息
             .Obj(new List<Obj> { new Obj("zDrone.obj", //Obj
                                          "zDrone.png", //贴图 
-                                         new VisualOffset(Vector3.one * 0.5f, //Scale
-                                                          Vector3.forward * 1.4f, //Position
+                                         new VisualOffset(Vector3.one, //Scale
+                                                          Vector3.forward * 3f, //Position
                                                           new Vector3(-90f, 0f, 0f)))//Rotation
             })
 
@@ -92,7 +92,7 @@ namespace Blocks
 
             ///碰撞器
             .CompoundCollider(new List<ColliderComposite> {
-                ColliderComposite.Mesh("zDrone.obj",Vector3.one * 0.5f,Vector3.forward * 1.4f,Vector3.zero),
+                ColliderComposite.Mesh("zDrone.obj",Vector3.one,Vector3.forward * 3f,Vector3.zero),
             })
 
             ///你的模块是不是可以忽视强搭
@@ -106,7 +106,7 @@ namespace Blocks
                                new BasePoint(true, false)         //底部连接点。第一个是指你能不能将其他模块安在该模块底部。第二个是指这个点是否是在开局时粘连其他链接点
                                                 .Motionable(true,true,true) //底点在X，Y，Z轴上是否是能够活动的。
                                                 .SetStickyRadius(0f),
-            new AddingPoint(new Vector3(0f, -0.2f, 0.5f), new Vector3(-180f, 00f, 360f),true).SetStickyRadius(0.3f)
+            new AddingPoint(new Vector3(0f, 0.2f, 1.5f), new Vector3(-180f, 00f, 360f),true).SetStickyRadius(0.3f)
             });
         public override void OnLoad()
         {
