@@ -51,7 +51,7 @@ namespace Blocks
             {
                 IncomingPositions.Add(coll.transform.position);
             }
-            else if (this.GetComponent<Collider>().Raycast(new Ray(this.transform.position, this.transform.InverseTransformPoint(ClosestTemp).normalized * SphereSize), out hito, SphereSize))
+            else if (coll.Raycast(new Ray(this.transform.position, this.transform.InverseTransformPoint(ClosestTemp).normalized * SphereSize), out hito, SphereSize))
             {
                 if (hito.collider == coll)
                 {
@@ -77,9 +77,13 @@ namespace Blocks
                     //float elevation = Hi * Mathf.Deg2Rad;
                     //float heading = Vi * Mathf.Deg2Rad;
                     Ray rayray = new Ray(StartPoint, EulerToDirection(Hi, Vi));
-                    if (Physics.Raycast(rayray, out hito, SphereSize, IgnoreLayer))
+                    RaycastHit[] RHs = Physics.RaycastAll(rayray, SphereSize);
+                    foreach (RaycastHit RH in RHs)
                     {
-                        HitPoints.Add(hito.point);
+                        if (RH.collider.isTrigger == false && RH.collider != Main && RH.collider != this)
+                        {
+                            HitPoints.Add(RH.point);
+                        }
                     }
                 }
             }

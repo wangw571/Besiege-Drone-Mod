@@ -58,10 +58,10 @@ namespace Blocks
             .BlockName("meow I")
 
             ///模型信息
-            .Obj(new List<Obj> { new Obj("turret.obj", //Obj
-                                         "turret.png", //贴图 
-                                         new VisualOffset(new Vector3(1f, 1f, 1f), //Scale
-                                                          new Vector3(0f, 0f, 0f), //Position
+            .Obj(new List<Obj> { new Obj("zDrone.obj", //Obj
+                                         "zDrone.png", //贴图 
+                                         new VisualOffset(Vector3.one * 0.5f, //Scale
+                                                          Vector3.forward * 1.4f, //Position
                                                           new Vector3(-90f, 0f, 0f)))//Rotation
             })
 
@@ -82,17 +82,17 @@ namespace Blocks
                                                              "导弹",
                                                              "War",
                                                              "Weapon"
-                                             }).Burnable(3)
+                                             })
             )
             ///质量
             .Mass(2f)
 
             ///是否显示碰撞器（在公开你的模块的时候记得写false）a
-            .ShowCollider(false)
+            .ShowCollider(true)
 
             ///碰撞器
             .CompoundCollider(new List<ColliderComposite> {
-                ColliderComposite.Box(new Vector3(1f, 1f, 1.2f), new Vector3(0f, 0f, 0.6f), new Vector3(0f, 0f, 0f)),
+                ColliderComposite.Mesh("zDrone.obj",Vector3.one * 0.5f,Vector3.forward * 1.4f,Vector3.zero),
             })
 
             ///你的模块是不是可以忽视强搭
@@ -105,7 +105,9 @@ namespace Blocks
             .AddingPoints(new List<AddingPoint> {
                                new BasePoint(true, false)         //底部连接点。第一个是指你能不能将其他模块安在该模块底部。第二个是指这个点是否是在开局时粘连其他链接点
                                                 .Motionable(true,true,true) //底点在X，Y，Z轴上是否是能够活动的。
-                                                .SetStickyRadius(0f)});
+                                                .SetStickyRadius(0f),
+            new AddingPoint(new Vector3(0f, -0.2f, 0.5f), new Vector3(-180f, 00f, 360f),true).SetStickyRadius(0.3f)
+            });
         public override void OnLoad()
         {
             // Your initialization code here

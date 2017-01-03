@@ -29,9 +29,12 @@ namespace Blocks
         protected IncomingDetectionScript IDS;
         protected bool IgnoreIncoming = false;
         protected Rigidbody rigidBody;
+        protected bool NotEvenHavingAJoint = false;
+        protected bool NotEvenHavingAFireTag = false;
 
         public float HitPoints;
         public Vector3 VelocityRecorder;
+        protected Vector3 PreviousPosition;
 
 
         protected Vector2 formulaProjectile(float X, float Y, float V, float G)
@@ -307,9 +310,8 @@ namespace Blocks
         }
 
 
-        protected Vector3 DroneDirectionIndicator(Vector3 LocalTargetDirection)
+        protected Vector3 DroneDirectionIndicator(Vector3 LocalTargetDirection, float CalculationSpeed)
         {
-            炮弹速度 = this.GetComponent<Rigidbody>().velocity.magnitude;
             float targetVelo = currentTarget.GetComponent<Rigidbody>().velocity.magnitude;
             //Debug.Log((currentTarget.GetComponent<Rigidbody>().velocity - 前一帧速度).magnitude);
             /*LocalTargetDirection = calculateNoneLinearTrajectoryWithAccelerationPrediction(
@@ -340,14 +342,14 @@ namespace Blocks
                     float.PositiveInfinity
                     );*/
             LocalTargetDirection = calculateNoneLinearTrajectory(
-                炮弹速度 + 0.000001f,
+                CalculationSpeed,
                 0.2f,
                 this.transform.position,
                 targetVelo,
                 currentTarget.transform.position,
                 currentTarget.GetComponent<Rigidbody>().velocity.normalized,
                     calculateLinearTrajectory(
-                        炮弹速度 + 0.000001f,
+                        CalculationSpeed,
                         this.transform.position,
                         targetVelo,
                         currentTarget.transform.position,
