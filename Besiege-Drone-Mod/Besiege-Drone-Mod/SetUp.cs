@@ -48,7 +48,7 @@ namespace Blocks
         public override string Name { get; } = "Drone_Deployment_Block";
         public override string DisplayName { get; } = "Drone Deployment Block";
         public override string Author { get; } = "wang_w571";
-        public override Version Version { get; } = new Version("0.2");
+        public override Version Version { get; } = new Version("0.21");
         protected Block Block = new Block()
             ///模块ID
             .ID(575)
@@ -77,9 +77,10 @@ namespace Blocks
 
             ///给搜索用的关键词
             .Properties(new BlockProperties().SearchKeywords(new string[] {
-                                                             "Turret",
-                                                             "炮台",
-                                                             "导弹",
+                                                             "Drone",
+                                                             "无人机",
+                                                             "靶机",
+                                                             "Target",
                                                              "War",
                                                              "Weapon"
                                              })

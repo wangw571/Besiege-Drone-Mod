@@ -9,7 +9,8 @@ namespace Blocks
     public class IncomingDetectionScript : MonoBehaviour
     {
         public Collider Main;
-        public List<Vector3> IncomingPositions;
+        public DroneStandardConputingScript MainMain;
+        public List<Vector3> IncomingPositions = new List<Vector3>();
         public bool SomethingInMyRange = false;
         public float SphereSize;
         public float VerticalPrecisionInDegree = 15;
@@ -17,10 +18,18 @@ namespace Blocks
         public bool UseRadarDetection = false;
         void FixedUpdate()
         {
-            IncomingPositions = new List<Vector3>();
+            if(!StatMaster.isSimulating)
+            {
+                Destroy(this.gameObject);
+            }
+            if (IncomingPositions.Count != 0)
+            {
+                MainMain.IncomingVectors = IncomingPositions.ToArray();
+                IncomingPositions.Clear();
+            }
             if (UseRadarDetection)
             {
-                List<Vector3> collidingPoints = RegularSphereScan(this.transform.position, VerticalPrecisionInDegree, HorizontalPrecisionInDegree, SphereSize, this.gameObject.layer);
+                List<Vector3> collidingPoints = RegularSphereScan(Main.transform.position, VerticalPrecisionInDegree, HorizontalPrecisionInDegree, SphereSize);
                 if (collidingPoints.Count != 0)
                 {
                     IncomingPositions.AddRange(collidingPoints);
@@ -29,7 +38,10 @@ namespace Blocks
             }
             SomethingInMyRange = false;
         }
-
+        void OnTriggerEnter(Collider coll)
+        {
+            OnTriggerStay(coll);
+        }
         void OnTriggerStay(Collider coll)
         {
             if (coll == Main || coll.isTrigger)
@@ -59,14 +71,19 @@ namespace Blocks
                     return;
                 }
             }
+            else
+            {
+                UseRadarDetection = true;
+            }
             //if(coll.GetComponent<MeshFilter>())
             //{
             //    Vector3[] Vertics = coll.GetComponent<MeshFilter>().mesh.vertices;
             //}
             SomethingInMyRange = true;
+
         }
 
-        List<Vector3> RegularSphereScan(Vector3 StartPoint, float HorizontalDegreePrecision, float VerticalDegreePrecision, float Distance, int IgnoreLayer)
+        List<Vector3> RegularSphereScan(Vector3 StartPoint, float HorizontalDegreePrecision, float VerticalDegreePrecision, float Distance)
         {
             List<Vector3> HitPoints = new List<Vector3>();
             RaycastHit hito;
@@ -80,9 +97,11 @@ namespace Blocks
                     RaycastHit[] RHs = Physics.RaycastAll(rayray, SphereSize);
                     foreach (RaycastHit RH in RHs)
                     {
-                        if (RH.collider.isTrigger == false && RH.collider != Main && RH.collider != this)
+                        //Debug.Log(RH.collider.gameObject.name);
+                        if (RH.collider.isTrigger == false && RH.collider != Main && RH.collider != this.gameObject.GetComponent<Collider>())
                         {
                             HitPoints.Add(RH.point);
+                            //Gizmos.DrawRay(rayray);
                         }
                     }
                 }
@@ -123,6 +142,10 @@ namespace Blocks
             float elevation = Elevation * Mathf.Deg2Rad;
             float heading = Heading * Mathf.Deg2Rad;
             return new Vector3(Mathf.Cos(elevation) * Mathf.Sin(heading), Mathf.Sin(elevation), Mathf.Cos(elevation) * Mathf.Cos(heading));
+        }
+        protected void LogHo()
+        {
+            Debug.Log("ho");
         }
     }
 }

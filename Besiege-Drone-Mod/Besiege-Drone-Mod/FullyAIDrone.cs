@@ -29,6 +29,7 @@ namespace Blocks
         protected MToggle ContinousSpawn;
         protected MSlider DroneTag;
         GameObject PositionIndicator;
+
         public override void SafeAwake()
         {
             Debug.Log("??????");
@@ -84,6 +85,8 @@ namespace Blocks
 
         protected override void OnSimulateFixedStart()
         {
+
+
             IAmSwitching = true;
             TargetSelector();
             Shooter = Instantiate(PrefabMaster.BlockPrefabs[11].gameObject);
@@ -104,7 +107,7 @@ namespace Blocks
             MySize = 1;
             精度 = 0.25f;
             size = 1;
-            SetUpHP(50);
+            SetUpHP(1500);
             RotatingSpeed = 5;
             PositionIndicator = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             DestroyImmediate(PositionIndicator.GetComponent<Rigidbody>());
@@ -112,8 +115,11 @@ namespace Blocks
         }
         protected override void OnSimulateUpdate()
         {
-            Shooter.transform.localEulerAngles = Vector3.right * 270;
-            Shooter.transform.localPosition = Vector3.up * 0.8f + Vector3.forward * 3f;
+            if (Shooter != null)
+            {
+                Shooter.transform.localEulerAngles = Vector3.right * 270;
+                Shooter.transform.localPosition = Vector3.up * 0.8f + Vector3.forward * 3f;
+            }
         }
         protected override void OnSimulateFixedUpdate()
         {
@@ -124,8 +130,8 @@ namespace Blocks
             Shooter.transform.localEulerAngles = Vector3.right * 270;
             Shooter.transform.localPosition = Vector3.up * 0.8f + Vector3.forward * 3f;
             /*Shooter.GetComponent<Rigidbody>().mass = 0;
-            Shooter.GetComponent<Rigidbody>().isKinematic = true;
-            Shooter.GetComponent<Collider>().isTrigger = true;*/
+            Shooter.GetComponent<Rigidbody>().isKinematic = true;*/
+            Destroy(Shooter.GetComponentInChildren<CapsuleCollider>());
             CB = Shooter.GetComponent<CanonBlock>();
             CB.Sliders[0].Value = 5;
 
@@ -177,28 +183,33 @@ namespace Blocks
                 }
                 PreviousPosition = this.transform.position;
             }
-            if (IncomingDetection == null)
+            if (!IncomingDetection)
             {
-                IncomingDetection = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                IncomingDetection.layer = 15;
+                IncomingDetection = Instantiate(GameObject.CreatePrimitive(PrimitiveType.Sphere));
+                IncomingDetection.name = "IncomingDetection";
+                IncomingDetection.transform.position = this.transform.position;
+                IncomingDetection.GetComponent<SphereCollider>().radius = SphereSize;
+                IncomingDetection.GetComponent<SphereCollider>().isTrigger = true;
 
-                Destroy(IncomingDetection.GetComponent<MeshRenderer>());
-                Destroy(IncomingDetection.GetComponent<Rigidbody>());
+                Destroy(IncomingDetection.GetComponent<Renderer>());
+                //IncomingDetection.AddComponent<Rigidbody>();
+                //Destroy(IncomingDetection.GetComponent<Rigidbody>());
                 IDS = IncomingDetection.AddComponent<IncomingDetectionScript>();
-                IDS.Main = this.GetComponent<Collider>();
-
+                IDS.Main = this.GetComponentInChildren<MeshCollider>();
+                IDS.MainMain = this;
             }
+            IncomingDetection.GetComponent<SphereCollider>().center = Vector3.up * -SphereSize;
+            IncomingDetection.transform.position = this.transform.position;
+            IncomingDetection.transform.rotation = this.transform.rotation;
+            IDS.SphereSize = SphereSize;
             Vector3 TargetDirection;
 
             if (IDS.SomethingInMyRange && !(IgnoreIncoming && !IAmEscaping))
             {
-                Vector3 LocalTargetDirection = this.transform.TransformPoint(RelativeAverageOfPoints(IDS.IncomingPositions, SphereSize));
+
+                Vector3 LocalTargetDirection = this.transform.TransformPoint(RelativeAverageOfPoints(IncomingVectors, SphereSize));
+                IncomingVectors = new Vector3[0];
                 PositionIndicator.transform.position = this.transform.TransformPoint(LocalTargetDirection);
-                if (MissileGuidanceModeInt == 0)
-                {
-                    LocalTargetDirection = currentTarget.transform.position;
-                    LocalTargetDirection = DroneDirectionIndicator(LocalTargetDirection, 0);
-                }
 
                 //this.transform.rotation.SetFromToRotation(this.transform.forward, LocalTargetDirection);
                 //Vector3 rooo = Vector3.RotateTowards(this.transform.forward, LocalTargetDirection - this.transform.position, RotatingSpeed * size, RotatingSpeed * size);
@@ -207,10 +218,9 @@ namespace Blocks
                 //LocalTargetDirection = new Vector3(LocalTargetDirection.x, LocalTargetDirection.y - this.transform.position.y, LocalTargetDirection.z);
                 //float mag = (LocalTargetDirection.normalized - transform.forward.normalized).magnitude;
 
-                TargetDirection = (getCorrTorque(this.transform.forward, LocalTargetDirection - this.transform.position * 1, this.GetComponent<Rigidbody>(), 0.01f * size) * Mathf.Rad2Deg).normalized;
+                TargetDirection = (getCorrTorque(this.transform.forward, LocalTargetDirection - this.transform.position * 1, rigidBody, 0.01f * size) * Mathf.Rad2Deg).normalized;
 
                 rigidBody.angularVelocity = (TargetDirection * RotatingSpeed);
-
             }
             else if (currentTarget != null)
             {
@@ -298,12 +308,17 @@ namespace Blocks
 
             前一帧速度 = this.GetComponent<Rigidbody>().velocity;
         }
+        protected override void OnSimulateExit()
+        {
+            Destroy(IncomingDetection);
+        }
         void TargetSelector()
         {
             List<MachineTrackerMyId> BBList = new List<MachineTrackerMyId>();
             List<int> ImportanceMultiplier = new List<int>();
             if (DroneAIType.Value == 1)
             {
+
                 foreach (MachineTrackerMyId BB in FindObjectsOfType<MachineTrackerMyId>())
                 {
                     NotEvenHavingAFireTag = BB.gameObject.GetComponent<FireTag>() == null;
@@ -334,7 +349,8 @@ namespace Blocks
                             }
                             else if (BBID == 14 || BBID == 2 || BBID == 46 || BBID == 39)//Locomotion && Proplusion
                             {
-                                if (currentTarget.GetComponent<ConfigurableJoint>() != null)
+                                if (BB.gameObject.GetComponent<ConfigurableJoint>() != null)
+                                {
                                     if (NotEvenHavingAFireTag)
                                     {
                                         BBList.Add(BB);
@@ -347,6 +363,7 @@ namespace Blocks
                                         ImportanceMultiplier.Add(10);
                                         break;
                                     }
+                                }
                             }
                             else if (BBID == 26 || BBID == 55 || BBID == 52)//Propellers
                             {
@@ -356,7 +373,8 @@ namespace Blocks
                             }
                             else if (BBID == 34 || BBID == 25 || BBID == 43 /**/  || BBID == 28 || BBID == 4 || BBID == 18 || BBID == 27 || BBID == 3 || BBID == 20)//Large Aero Blocks/Mechanic Blocks
                             {
-                                if (currentTarget.GetComponent<ConfigurableJoint>() != null)
+                                if (BB.gameObject.GetComponent<ConfigurableJoint>() != null)
+                                {
                                     if (NotEvenHavingAFireTag)
                                     {
                                         BBList.Add(BB);
@@ -369,10 +387,12 @@ namespace Blocks
                                         ImportanceMultiplier.Add(4);
                                         break;
                                     }
+                                }
                             }
                             else if (BBID == 35 || BBID == 16 || BBID == 42 /**/ || BBID == 40 || BBID == 60 || BBID == 38 || BBID == 51 /**/ || BBID == 1 || BBID == 15 || BBID == 41 || BBID == 5)//Structure Block
                             {
-                                if (currentTarget.GetComponent<ConfigurableJoint>() != null)
+                                if (BB.gameObject.GetComponent<ConfigurableJoint>() != null)
+                                {
                                     if (NotEvenHavingAFireTag)
                                     {
                                         BBList.Add(BB);
@@ -385,6 +405,7 @@ namespace Blocks
                                         ImportanceMultiplier.Add(1);
                                         break;
                                     }
+                                }
                             }
                             break;
 

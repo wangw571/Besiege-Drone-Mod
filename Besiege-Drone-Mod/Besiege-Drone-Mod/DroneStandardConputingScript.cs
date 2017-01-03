@@ -32,6 +32,7 @@ namespace Blocks
         protected bool NotEvenHavingAFireTag = false;
 
         public float HitPoints;
+        public Vector3[] IncomingVectors;
         public Vector3 VelocityRecorder;
         protected Vector3 PreviousPosition;
 
@@ -367,10 +368,10 @@ namespace Blocks
             前一帧速度 = GetComponent<Rigidbody>().velocity;
             return LocalTargetDirection;
         }
-        protected Vector3 RelativeAverageOfPoints(List<Vector3> Vector3s, float SphereSize)
+        protected Vector3 RelativeAverageOfPoints(Vector3[] Vector3s, float SphereSize)
         {
             Vector3 V3 = this.transform.forward;
-            if (Vector3s.Count > 0)
+            if (Vector3s.Length > 0)
             {
                 foreach (Vector3 VT3 in Vector3s)
                 {
@@ -400,6 +401,10 @@ namespace Blocks
             float elevation = Elevation * Mathf.Deg2Rad;
             float heading = Heading * Mathf.Deg2Rad;
             return new Vector3(Mathf.Cos(elevation) * Mathf.Sin(heading), Mathf.Sin(elevation), Mathf.Cos(elevation) * Mathf.Cos(heading));
+        }
+        protected void LogHo()
+        {
+            Debug.Log("ho");
         }
     }
 }
