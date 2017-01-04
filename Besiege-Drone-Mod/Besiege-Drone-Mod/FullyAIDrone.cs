@@ -13,7 +13,7 @@ namespace Blocks
         int FUcounter = 0;
         int MissileGuidanceModeInt = 0;
         int RotatingSpeed = 1;
-        float SphereSize = 15;
+        float SphereSize = 30;
         float MinimumAccelerationSqrToTakeDamage = 20f;
         int AIDifficultyValue;
 
@@ -108,7 +108,7 @@ namespace Blocks
             精度 = 0.25f;
             size = 1;
             SetUpHP(500);
-            RotatingSpeed = 5;
+            RotatingSpeed = 3;
             PositionIndicator = Instantiate(GameObject.CreatePrimitive(PrimitiveType.Sphere));
             DestroyImmediate(PositionIndicator.GetComponent<Rigidbody>());
             DestroyImmediate(PositionIndicator.GetComponent<Collider>());
@@ -213,7 +213,8 @@ namespace Blocks
             {
                 IgnoreIncoming = !IAmEscaping;
             }
-            if (IncomingVectors.Length != 0 && IgnoreIncoming && IAmEscaping)
+
+            if (IncomingVectors.Length != 0 && !IgnoreIncoming)
             {
                 LogHo();
                 Vector3 LocalTargetDirection = this.transform.TransformPoint(-RelativeAverageOfPoints(IncomingVectors, SphereSize));

@@ -11,7 +11,6 @@ namespace Blocks
         public Collider Main;
         public DroneStandardConputingScript MainMain;
         public List<Vector3> IncomingPositions = new List<Vector3>();
-        public bool SomethingInMyRange = false;
         public float SphereSize;
         public float VerticalPrecisionInDegree = 15;
         public float HorizontalPrecisionInDegree = 15;
@@ -25,7 +24,8 @@ namespace Blocks
             LR.SetColors(Color.red, Color.red);
             VertexCount = 3500;
         }
-        void FixedUpdate()
+
+        void FakeFixedUpdate()
         {
             DebugShowingLines();
 
@@ -44,9 +44,25 @@ namespace Blocks
             {
                 IncomingPositions.AddRange(collidingPoints);
             }
-
-            SomethingInMyRange = false;
             Debug.Log(IncomingPositions.Count);
+        }
+        void FixedUpdate()
+        {
+            DebugShowingLines();
+            MainMain.IncomingVectors = IncomingPositions.ToArray();
+            IncomingPositions.Clear();
+
+            if (!StatMaster.isSimulating)
+            {
+                Destroy(this.gameObject);
+            }
+
+            List<Vector3> collidingPoints = RegularSphereScan(MainMain.transform.position, VerticalPrecisionInDegree, HorizontalPrecisionInDegree, SphereSize);
+            if (collidingPoints.Count != 0)
+            {
+                IncomingPositions.AddRange(collidingPoints);
+            }
+            //Debug.Log(MainMain.IncomingVectors.Length);
         }
         void OnTriggerEnter(Collider coll)
         {
@@ -88,7 +104,6 @@ namespace Blocks
             //{
             //    Vector3[] Vertics = coll.GetComponent<MeshFilter>().mesh.vertices;
             //}
-            SomethingInMyRange = true;
 
         }
 
@@ -110,7 +125,6 @@ namespace Blocks
                         if (RH.collider.isTrigger == false && RH.collider != Main && RH.collider != this.gameObject.GetComponent<Collider>())
                         {
                             HitPoints.Add(RH.point);
-                            SomethingInMyRange = true;
                             //Gizmos.DrawRay(rayray);
                         }
                     }

@@ -48,7 +48,7 @@ namespace Blocks
         public override string Name { get; } = "Drone_Deployment_Block";
         public override string DisplayName { get; } = "Drone Deployment Block";
         public override string Author { get; } = "wang_w571";
-        public override Version Version { get; } = new Version("0.21");
+        public override Version Version { get; } = new Version("0.53");
         protected Block Block = new Block()
             ///模块ID
             .ID(575)
@@ -89,7 +89,7 @@ namespace Blocks
             .Mass(2f)
 
             ///是否显示碰撞器（在公开你的模块的时候记得写false）a
-            .ShowCollider(true)
+            .ShowCollider(false)
 
             ///碰撞器
             .CompoundCollider(new List<ColliderComposite> {
