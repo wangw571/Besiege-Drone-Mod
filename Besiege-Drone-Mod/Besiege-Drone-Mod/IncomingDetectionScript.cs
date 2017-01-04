@@ -11,32 +11,36 @@ namespace Blocks
         public Collider Main;
         public DroneStandardConputingScript MainMain;
         public List<Vector3> IncomingPositions = new List<Vector3>();
-        public bool SomethingInMyRange = false;
         public float SphereSize;
         public float VerticalPrecisionInDegree = 15;
         public float HorizontalPrecisionInDegree = 15;
         public bool UseRadarDetection = false;
+        public LineRenderer LR;
+        public int VertexCount;
+        void Start()
+        {
+            LR = this.gameObject.AddComponent<LineRenderer>();
+            LR.SetWidth(0.05f, 0.05f);
+            LR.SetColors(Color.red, Color.red);
+            VertexCount = 3500;
+        }
         void FixedUpdate()
         {
-            if(!StatMaster.isSimulating)
+
+            if (!StatMaster.isSimulating)
             {
                 Destroy(this.gameObject);
             }
-            if (IncomingPositions.Count != 0)
+
+            List<Vector3> collidingPoints = RegularSphereScan(MainMain.transform.position, VerticalPrecisionInDegree, HorizontalPrecisionInDegree, SphereSize);
+            DebugShowingLines();
+            if (collidingPoints.Count != 0)
             {
-                MainMain.IncomingVectors = IncomingPositions.ToArray();
-                IncomingPositions.Clear();
+                IncomingPositions.AddRange(collidingPoints);
             }
-            if (UseRadarDetection)
-            {
-                List<Vector3> collidingPoints = RegularSphereScan(Main.transform.position, VerticalPrecisionInDegree, HorizontalPrecisionInDegree, SphereSize);
-                if (collidingPoints.Count != 0)
-                {
-                    IncomingPositions.AddRange(collidingPoints);
-                }
-                UseRadarDetection = false;
-            }
-            SomethingInMyRange = false;
+            MainMain.IncomingVectors = IncomingPositions.ToArray();
+            Debug.Log(MainMain.IncomingVectors.Length);
+            IncomingPositions.Clear();
         }
         void OnTriggerEnter(Collider coll)
         {
@@ -48,7 +52,6 @@ namespace Blocks
             {
                 return;
             }
-
             Vector3 ClosestTemp = coll.ClosestPointOnBounds(this.transform.position);
             float LongestGasp = SphereSize * Mathf.Sin(Mathf.Deg2Rad * Mathf.Max(VerticalPrecisionInDegree, HorizontalPrecisionInDegree));
             RaycastHit hito;
@@ -79,7 +82,6 @@ namespace Blocks
             //{
             //    Vector3[] Vertics = coll.GetComponent<MeshFilter>().mesh.vertices;
             //}
-            SomethingInMyRange = true;
 
         }
 
@@ -142,6 +144,19 @@ namespace Blocks
             float elevation = Elevation * Mathf.Deg2Rad;
             float heading = Heading * Mathf.Deg2Rad;
             return new Vector3(Mathf.Cos(elevation) * Mathf.Sin(heading), Mathf.Sin(elevation), Mathf.Cos(elevation) * Mathf.Cos(heading));
+        }
+        void DebugShowingLines()
+        {
+            VertexCount = IncomingPositions.Count * 2 + 1;
+            LR.SetVertexCount(VertexCount);
+            int i = 0;
+            foreach (Vector3 cp in IncomingPositions)
+            {
+                LR.SetPosition(i, this.transform.position);
+                ++i;
+                LR.SetPosition(i, cp);
+                ++i;
+            }
         }
         protected void LogHo()
         {

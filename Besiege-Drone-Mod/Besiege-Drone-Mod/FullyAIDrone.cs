@@ -107,9 +107,9 @@ namespace Blocks
             MySize = 1;
             精度 = 0.25f;
             size = 1;
-            SetUpHP(1500);
+            SetUpHP(500);
             RotatingSpeed = 5;
-            PositionIndicator = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            PositionIndicator = Instantiate(GameObject.CreatePrimitive(PrimitiveType.Sphere));
             DestroyImmediate(PositionIndicator.GetComponent<Rigidbody>());
             DestroyImmediate(PositionIndicator.GetComponent<Collider>());
         }
@@ -183,31 +183,40 @@ namespace Blocks
                 }
                 PreviousPosition = this.transform.position;
             }
-            if (!IncomingDetection)
+            if (IncomingDetection == null)
             {
                 IncomingDetection = Instantiate(GameObject.CreatePrimitive(PrimitiveType.Sphere));
                 IncomingDetection.name = "IncomingDetection";
                 IncomingDetection.transform.position = this.transform.position;
-                IncomingDetection.GetComponent<SphereCollider>().radius = SphereSize;
-                IncomingDetection.GetComponent<SphereCollider>().isTrigger = true;
+                //IncomingDetection.GetComponent<SphereCollider>().radius = SphereSize;
+                IncomingDetection.transform.localScale = Vector3.one * SphereSize * 2;
+                //IncomingDetection.GetComponent<Renderer>().material = new Material(Shader.Find("Transparent/Diffuse"));
+                //IncomingDetection.GetComponent<Renderer>().material.color = new Color(0.5f, 0, 0, 0.5f);
 
                 Destroy(IncomingDetection.GetComponent<Renderer>());
-                //IncomingDetection.AddComponent<Rigidbody>();
                 //Destroy(IncomingDetection.GetComponent<Rigidbody>());
                 IDS = IncomingDetection.AddComponent<IncomingDetectionScript>();
                 IDS.Main = this.GetComponentInChildren<MeshCollider>();
                 IDS.MainMain = this;
+
+
+                //IncomingDetection.AddComponent<Rigidbody>();
+                IncomingDetection.GetComponent<SphereCollider>().isTrigger = true;
+                //IncomingDetection.GetComponent<SphereCollider>().center = Vector3.up * -SphereSize;
             }
-            IncomingDetection.GetComponent<SphereCollider>().center = Vector3.up * -SphereSize;
-            IncomingDetection.transform.position = this.transform.position;
             IncomingDetection.transform.rotation = this.transform.rotation;
+            IncomingDetection.transform.position = Shooter.transform.position ;
+            IncomingDetection.name = "IncomingDetection" + IncomingDetection.transform.position;
             IDS.SphereSize = SphereSize;
             Vector3 TargetDirection;
-
-            if (IDS.SomethingInMyRange && !(IgnoreIncoming && !IAmEscaping))
+            if (IAmEscaping)
             {
-
-                Vector3 LocalTargetDirection = this.transform.TransformPoint(RelativeAverageOfPoints(IncomingVectors, SphereSize));
+                IgnoreIncoming = !IAmEscaping;
+            }
+            if (IncomingVectors.Length != 0 && IgnoreIncoming && IAmEscaping)
+            {
+                LogHo();
+                Vector3 LocalTargetDirection = this.transform.TransformPoint(-RelativeAverageOfPoints(IncomingVectors, SphereSize));
                 IncomingVectors = new Vector3[0];
                 PositionIndicator.transform.position = this.transform.TransformPoint(LocalTargetDirection);
 
@@ -311,6 +320,7 @@ namespace Blocks
         protected override void OnSimulateExit()
         {
             Destroy(IncomingDetection);
+            Destroy(PositionIndicator);
         }
         void TargetSelector()
         {
@@ -341,7 +351,7 @@ namespace Blocks
                                     break;
                                 }
                             }
-                            else if (BBID == 59 || BBID == 54)//Rocket & Grenade
+                            else if (BBID == 59 || BBID == 54 || BBID == 43)//Rocket & Grenade
                             {
                                 BBList.Add(BB);
                                 ImportanceMultiplier.Add(12);
@@ -365,13 +375,13 @@ namespace Blocks
                                     }
                                 }
                             }
-                            else if (BBID == 26 || BBID == 55 || BBID == 52)//Propellers
+                            else if (BBID == 26 || BBID == 55 || BBID == 52 )//Propellers and balloon
                             {
                                 BBList.Add(BB);
                                 ImportanceMultiplier.Add(8);
                                 break;
                             }
-                            else if (BBID == 34 || BBID == 25 || BBID == 43 /**/  || BBID == 28 || BBID == 4 || BBID == 18 || BBID == 27 || BBID == 3 || BBID == 20)//Large Aero Blocks/Mechanic Blocks
+                            else if (BBID == 34 || BBID == 25  /**/  || BBID == 28 || BBID == 4 || BBID == 18 || BBID == 27 || BBID == 3 || BBID == 20)//Large Aero Blocks/Mechanic Blocks
                             {
                                 if (BB.gameObject.GetComponent<ConfigurableJoint>() != null)
                                 {
