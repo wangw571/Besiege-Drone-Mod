@@ -11,6 +11,7 @@ namespace Blocks
         public Collider Main;
         public DroneStandardConputingScript MainMain;
         public List<Vector3> IncomingPositions = new List<Vector3>();
+        public bool SomethingInMyRange = false;
         public float SphereSize;
         public float VerticalPrecisionInDegree = 15;
         public float HorizontalPrecisionInDegree = 15;
@@ -26,21 +27,26 @@ namespace Blocks
         }
         void FixedUpdate()
         {
+            DebugShowingLines();
 
             if (!StatMaster.isSimulating)
             {
                 Destroy(this.gameObject);
             }
+            if (IncomingPositions.Count != 0)
+            {
+                MainMain.IncomingVectors = IncomingPositions.ToArray();
+                IncomingPositions.Clear();
+            }
 
             List<Vector3> collidingPoints = RegularSphereScan(MainMain.transform.position, VerticalPrecisionInDegree, HorizontalPrecisionInDegree, SphereSize);
-            DebugShowingLines();
             if (collidingPoints.Count != 0)
             {
                 IncomingPositions.AddRange(collidingPoints);
             }
-            MainMain.IncomingVectors = IncomingPositions.ToArray();
-            Debug.Log(MainMain.IncomingVectors.Length);
-            IncomingPositions.Clear();
+
+            SomethingInMyRange = false;
+            Debug.Log(IncomingPositions.Count);
         }
         void OnTriggerEnter(Collider coll)
         {
@@ -82,6 +88,7 @@ namespace Blocks
             //{
             //    Vector3[] Vertics = coll.GetComponent<MeshFilter>().mesh.vertices;
             //}
+            SomethingInMyRange = true;
 
         }
 
@@ -103,6 +110,7 @@ namespace Blocks
                         if (RH.collider.isTrigger == false && RH.collider != Main && RH.collider != this.gameObject.GetComponent<Collider>())
                         {
                             HitPoints.Add(RH.point);
+                            SomethingInMyRange = true;
                             //Gizmos.DrawRay(rayray);
                         }
                     }
