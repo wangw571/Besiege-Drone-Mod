@@ -13,8 +13,8 @@ namespace Blocks
         protected GameObject Shooter;
         protected CanonBlock CB;
         protected int iterativeCount = 0;
-        protected GameObject currentTarget;
-        protected Vector3 targetPoint;
+        public GameObject currentTarget;
+        public Vector3 targetPoint;
         protected Vector3 targetVeloRecorder;
         protected Vector3 targetVeloAveraged;
         protected float 炮弹速度;
@@ -26,7 +26,7 @@ namespace Blocks
         public float size;
         protected GameObject IncomingDetection;
         protected IncomingDetectionScript IDS;
-        protected bool IgnoreIncoming = false;
+        public bool IgnoreIncoming = false;
         protected Rigidbody rigidBody;
         protected bool NotEvenHavingAJoint = false;
         protected bool NotEvenHavingAFireTag = false;
@@ -316,7 +316,9 @@ namespace Blocks
 
         protected Vector3 DroneDirectionIndicator(Vector3 LocalTargetDirection, float CalculationSpeed)
         {
-            float targetVelo = currentTarget.GetComponent<Rigidbody>().velocity.magnitude;
+            float targetVelo = targetVeloAveraged.magnitude;
+            Vector3 TargetDirection = targetVeloAveraged.normalized;
+
             //Debug.Log((currentTarget.GetComponent<Rigidbody>().velocity - 前一帧速度).magnitude);
             /*LocalTargetDirection = calculateNoneLinearTrajectoryWithAccelerationPrediction(
                 炮弹速度 + 0.001f,
@@ -351,13 +353,13 @@ namespace Blocks
                 this.transform.position,
                 targetVelo,
                 currentTarget.transform.position,
-                currentTarget.GetComponent<Rigidbody>().velocity.normalized,
+                TargetDirection,
                     calculateLinearTrajectory(
                         CalculationSpeed,
                         this.transform.position,
                         targetVelo,
                         currentTarget.transform.position,
-                        currentTarget.GetComponent<Rigidbody>().velocity.normalized
+                        TargetDirection
                     ),
                     Physics.gravity.y,
                     size * 精度 + 10 * size,

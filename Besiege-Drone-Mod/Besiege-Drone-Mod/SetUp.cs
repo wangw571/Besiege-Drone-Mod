@@ -131,6 +131,8 @@ namespace Blocks
 
     public class DroneControlBlockBehavior : BlockScript
     {
+        private RaycastHit hitt;
+
         MKey Activation;
         MKey Engage;
         MKey Recall;
@@ -144,9 +146,14 @@ namespace Blocks
         MToggle ContinousSpawn;
         MSlider DroneTag;
 
-        List<FullyAIDrone> AIDroneList;
+        public List<FullyAIDrone> AIDroneList;
+        public List<Vector3> RelativeLeavePositions;
+        public List<Boolean> AIDroneReachedOriginalPosition;
+
+        public bool Engaging = false;
 
         GameObject DetectiveSphere;
+        GameObject Target;
         public override void SafeAwake()
         {
             Engage = new MKey("Engage", "Engage", KeyCode.T);
@@ -200,7 +207,72 @@ namespace Blocks
         }
         protected override void OnSimulateUpdate()
         {
-            base.OnSimulateUpdate();
+            if (Engage.IsPressed)
+            {
+                if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hitt, float.PositiveInfinity))
+                {
+                    if (hitt.transform.position != this.transform.position && hitt.collider.attachedRigidbody != null)
+                    {
+                        Target = hitt.transform.gameObject;
+                        if (Target.GetComponentInParent<MachineTrackerMyId>() || this.name.Contains(("IsCloaked")))
+                        {
+                            if (Target.GetComponentInParent<MachineTrackerMyId>().gameObject.name.Contains("IsCloaked") || this.name.Contains(("IsCloaked")))
+                            {
+                                Target = null;
+                            }
+                        }
+                    }
+                }
+                foreach (FullyAIDrone FAD in AIDroneList)
+                {
+                    FAD.currentTarget = Target;
+                }
+            }
+            if (ForceEngage.IsPressed)
+            {
+                if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hitt, float.PositiveInfinity))
+                {
+                    if (hitt.transform.position != this.transform.position && hitt.collider.attachedRigidbody != null)
+                    {
+                        Target = hitt.transform.gameObject;
+                        if (Target.GetComponentInParent<MachineTrackerMyId>() || this.name.Contains(("IsCloaked")))
+                        {
+                            if (Target.GetComponentInParent<MachineTrackerMyId>().gameObject.name.Contains("IsCloaked") || this.name.Contains(("IsCloaked")))
+                            {
+                                Target = null;
+                            }
+                        }
+                    }
+                }
+                foreach (FullyAIDrone FAD in AIDroneList)
+                {
+                    FAD.currentTarget = Target;
+                    FAD.IgnoreIncoming = true;
+                }
+            }
+            if (Recall.IsPressed)
+            {
+                foreach (FullyAIDrone FAD in AIDroneList)
+                {
+                    FAD.currentTarget = null;
+                    FAD.IgnoreIncoming = false;
+                    FAD.targetPoint = RelativeLeavePositions[AIDroneList.IndexOf(FAD)];
+                }
+            }
+        }
+
+        protected override void OnSimulateFixedUpdate()
+        {
+
+            //FAD.targetPoint = RelativeLeavePositions[AIDroneList.IndexOf(FAD)];
+            if (!Engaging)
+            {
+                RelativeLeavePositions = new List<Vector3>();
+                foreach (FullyAIDrone FAD in AIDroneList)
+                {
+                    RelativeLeavePositions.Add(FAD.transform.position);
+                }
+            }
         }
 
         public void PleaseGiveMeNewOrbitPoint(Vector3 NowPoistion, Vector3 NowEuler)

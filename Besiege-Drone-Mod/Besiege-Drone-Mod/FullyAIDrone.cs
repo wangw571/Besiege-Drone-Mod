@@ -121,11 +121,6 @@ namespace Blocks
             PositionIndicator.transform.position = targetPoint;
             rigidbody.AddRelativeForce(Vector3.forward * 30 * this.rigidbody.mass);//Need calculate size
 
-            if (HitPoints <= (this.rigidBody.velocity - targetVeloAveraged).sqrMagnitude)
-            {
-                IgnoreIncoming = true;
-            }
-
             ++FUcounter;
             if (!IAmEscapingOrReturning)
             {
@@ -137,7 +132,14 @@ namespace Blocks
                 }
                 else if (FUcounter % 50 == 0)
                 {
-                    Vector3 velo = currentTarget.GetComponent<Rigidbody>().velocity;
+                    Vector3 velo = Vector3.zero;
+                    if (currentTarget)
+                    {
+                        if (currentTarget.GetComponent<Rigidbody>())
+                        {
+                            velo = currentTarget.GetComponent<Rigidbody>().velocity;
+                        }
+                    }
                     targetVeloAveraged = Vector3.Lerp(targetVeloRecorder, velo, 0.5f);
                     targetVeloRecorder = velo;
                 }
@@ -193,6 +195,15 @@ namespace Blocks
             {
                 IgnoreIncoming = !IAmEscapingOrReturning;
             }
+            
+            if(DroneAIType.Value == 1)
+            {
+                WhatComputerWillDo();
+            }
+            else
+            {
+                WhenAssisting();
+            }
 
             前一帧速度 = this.GetComponent<Rigidbody>().velocity;
         }
@@ -204,6 +215,11 @@ namespace Blocks
 
         void WhatComputerWillDo()
         {
+            if (HitPoints <= (this.rigidBody.velocity - targetVeloAveraged).sqrMagnitude)
+            {
+                IgnoreIncoming = true;
+            }
+
             Vector3 TargetDirection;
             if (IncomingVectors.Length != 0 && !IgnoreIncoming)
             {
@@ -294,8 +310,7 @@ namespace Blocks
                 TargetDirection = (getCorrTorque(this.transform.forward, LocalTargetDirection - this.transform.position * 1, this.GetComponent<Rigidbody>(), 0.01f * size) * Mathf.Rad2Deg).normalized;
 
                 GetComponent<Rigidbody>().angularVelocity = (TargetDirection * RotatingSpeed);
-
-
+                
             }
             else
             {
