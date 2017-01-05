@@ -20,6 +20,7 @@ namespace Blocks
         void Start()
         {
             LR = this.gameObject.AddComponent<LineRenderer>();
+            LR.material = new Material(Shader.Find("Particles/Additive"));
             LR.SetWidth(0.05f, 0.05f);
             LR.SetColors(Color.red, Color.red);
             VertexCount = 3500;

@@ -9,17 +9,14 @@ namespace Blocks
     public class FullyAIDrone : DroneStandardConputingScript
     {
         bool IAmSwitching;
-        bool IAmEscaping;
+        bool IAmEscapingOrReturning;
         int FUcounter = 0;
-        int MissileGuidanceModeInt = 0;
         int RotatingSpeed = 1;
         float SphereSize = 30;
         float MinimumAccelerationSqrToTakeDamage = 20f;
         int AIDifficultyValue;
 
         protected MKey Activation;
-        protected MKey Engage;
-        protected MKey ForceEngage;
         protected MMenu DroneAIType;
         protected MMenu DroneSize;
         protected MMenu Difficulty;
@@ -32,55 +29,38 @@ namespace Blocks
 
         public override void SafeAwake()
         {
-            Debug.Log("??????");
-            Activation = new MKey("Activate Spawning Drones", "Activate", KeyCode.P);
+            Activation = AddKey("Activate Spawning Drones", "Activate", KeyCode.P);
             Activation.DisplayInMapper = false;
-            Engage = new MKey("Engage", "Engage", KeyCode.T);
-            ForceEngage = new MKey("Forced Engege", "FEngage", KeyCode.X);
-            DroneAIType = new MMenu("AIType", 1, new List<string>() { "Assistantnce", "Computer Controlled" });
-            DroneSize = new MMenu("SizeType", 0, new List<string>() { "Heavt", "Medium", "Light" });
-            Difficulty = new MMenu("Difficulty", 0, new List<string>() { "Aggressive", "Defensive", "For Practice" });
+            DroneAIType = AddMenu("AIType", 1, new List<string>() { "Assistantnce", "Computer Controlled" });
+            DroneSize = AddMenu("SizeType", 0, new List<string>() { "Heavt", "Medium", "Light" });
+            Difficulty = AddMenu("Difficulty", 0, new List<string>() { "Aggressive", "Defensive", "For Practice" });
             //Aggressive: To all moving items|Defensive: Only to aggressive blocks|For Practice: Flying around, keeping radar function, 
-            OrbitRadius = new MSlider("Orbit Radius", "OrbitRadius", 15, 5, 200);
-            DroneAmount = new MSlider("Drone Amount", "Amount", 3, 1, 15);
-            ContinousSpawn = new MToggle("Spawn Drones\r\n after losing", "CSpawn", false);
-            DroneTag = new MSlider("Drone Tag", "Tag", 0, 0, 100);
+            OrbitRadius = AddSlider("Orbit Radius", "OrbitRadius", 15, 5, 200);
+            DroneAmount = AddSlider("Drone Amount", "Amount", 3, 1, 15);
+            ContinousSpawn = AddToggle("Spawn Drones\r\n after losing", "CSpawn", false);
+            DroneTag = AddSlider("Drone Tag", "Tag", 0, 0, 100);
         }
         protected override void BuildingUpdate()
         {
-            if (Activation == null)
-            {
-                Debug.Log("??????");
-                Activation = new MKey("Activate Spawning Drones", "Activate", KeyCode.P);
-                Activation.DisplayInMapper = false;
-                Engage = new MKey("Engage", "Engage", KeyCode.T);
-                ForceEngage = new MKey("Forced Engege", "FEngage", KeyCode.X);
-                DroneAIType = new MMenu("AIType", 0, new List<string>() { "Assistantnce", "Computer Controlled" });
-                DroneSize = new MMenu("SizeType", 0, new List<string>() { "Heavt", "Medium", "Light" });
-                Difficulty = new MMenu("Difficulty", 0, new List<string>() { "Aggressive", "Defensive", "For Practice" });
-                //Aggressive: To all moving items|Defensive: Only to aggressive blocks|For Practice: Flying around, keeping radar function, 
-                OrbitRadius = new MSlider("Orbit Radius", "OrbitRadius", 15, 5, 200);
-                DroneAmount = new MSlider("Drone Amount", "Amount", 3, 1, 15);
-                ContinousSpawn = new MToggle("Spawn Drones\r\n after losing", "CSpawn", false);
-                DroneTag = new MSlider("Drone Tag", "Tag", 0, 0, 100);
-            }
-            /*DroneTag.Value = (int)DroneTag.Value;
+            //Debug.Log(GameObject.Find("frozen_knight_1").GetComponent<Renderer>().material.shader.name);
+            //this.transform.Find("Vis/Vis").GetComponent<MeshRenderer>().material.shader = Shader.Find("Instanced/Block Shader (GPUI off)");
+            this.transform.Find("Vis/Vis").GetComponent<MeshRenderer>().material.shader = Shader.Find("Legacy Shaders/Reflective/Bumped Specular");
+            this.transform.Find("Vis/Vis").GetComponent<MeshRenderer>().material.SetTexture("_BumpMap", resources["zDroneBump.png"].texture);
+            DroneTag.Value = (int)DroneTag.Value;
             if (DroneAIType.Value == 0)
             {
                 Activation.DisplayInMapper = false;
-                Engage.DisplayInMapper = true;
-                ForceEngage.DisplayInMapper = true;
                 OrbitRadius.DisplayInMapper = true;
                 Difficulty.DisplayInMapper = false;
+                DroneTag.DisplayInMapper = true;
             }
             else
             {
                 Activation.DisplayInMapper = true;
-                Engage.DisplayInMapper = false;
-                ForceEngage.DisplayInMapper = false;
                 OrbitRadius.DisplayInMapper = false;
                 Difficulty.DisplayInMapper = true;
-            }*/
+                DroneTag.DisplayInMapper = false;
+            }
         }
 
         protected override void OnSimulateFixedStart()
@@ -139,7 +119,7 @@ namespace Blocks
             this.rigidBody.AddRelativeForce(new Vector3(RelativeVelo.x * -15, RelativeVelo.y * -15, 0));
             HPCalculation(MinimumAccelerationSqrToTakeDamage);
             PositionIndicator.transform.position = targetPoint;
-            this.rigidbody.AddForce(this.transform.forward * 40 * this.rigidbody.mass);//Need calculate size
+            rigidbody.AddRelativeForce(Vector3.forward * 30 * this.rigidbody.mass);//Need calculate size
 
             if (HitPoints <= (this.rigidBody.velocity - targetVeloAveraged).sqrMagnitude)
             {
@@ -147,7 +127,7 @@ namespace Blocks
             }
 
             ++FUcounter;
-            if (!IAmEscaping)
+            if (!IAmEscapingOrReturning)
             {
                 if (FUcounter >= 1000)
                 {
@@ -162,9 +142,9 @@ namespace Blocks
                     targetVeloRecorder = velo;
                 }
             }
-            else if (this.transform.InverseTransformPoint(targetPoint).sqrMagnitude <= 100)
+            else if (this.transform.InverseTransformPoint(targetPoint).sqrMagnitude <= 100 && DroneAIType.Value == 1)
             {
-                IAmEscaping = false;
+                IAmEscapingOrReturning = false;
                 FUcounter = 0;
                 IAmSwitching = false;
                 TargetSelector();
@@ -175,7 +155,7 @@ namespace Blocks
                 if ((PreviousPosition - this.transform.position).sqrMagnitude <= 425)
                 {
 
-                    IAmEscaping = false;
+                    IAmEscapingOrReturning = false;
                     FUcounter = 0;
                     IAmSwitching = false;
                     TargetSelector();
@@ -205,18 +185,28 @@ namespace Blocks
                 //IncomingDetection.GetComponent<SphereCollider>().center = Vector3.up * -SphereSize;
             }
             IncomingDetection.transform.rotation = this.transform.rotation;
-            IncomingDetection.transform.position = Shooter.transform.position ;
+            IncomingDetection.transform.position = Shooter.transform.position;
             IncomingDetection.name = "IncomingDetection" + IncomingDetection.transform.position;
             IDS.SphereSize = SphereSize;
-            Vector3 TargetDirection;
-            if (IAmEscaping)
+
+            if (IAmEscapingOrReturning)
             {
-                IgnoreIncoming = !IAmEscaping;
+                IgnoreIncoming = !IAmEscapingOrReturning;
             }
 
+            前一帧速度 = this.GetComponent<Rigidbody>().velocity;
+        }
+        protected override void OnSimulateExit()
+        {
+            Destroy(IncomingDetection);
+            Destroy(PositionIndicator);
+        }
+
+        void WhatComputerWillDo()
+        {
+            Vector3 TargetDirection;
             if (IncomingVectors.Length != 0 && !IgnoreIncoming)
             {
-                LogHo();
                 Vector3 LocalTargetDirection = this.transform.TransformPoint(-RelativeAverageOfPoints(IncomingVectors, SphereSize));
                 IncomingVectors = new Vector3[0];
                 PositionIndicator.transform.position = this.transform.TransformPoint(LocalTargetDirection);
@@ -240,74 +230,71 @@ namespace Blocks
                     targetPoint = currentTarget.transform.position;
                     PositionIndicator.transform.position = targetPoint;
 
-                    if (MissileGuidanceModeInt == 0)
-                    {
-                        LocalTargetDirection = currentTarget.transform.position;
-                        LocalTargetDirection = DroneDirectionIndicator(LocalTargetDirection, 炮弹速度 + this.rigidBody.velocity.magnitude);
-                    }
+
+                    LocalTargetDirection = currentTarget.transform.position;
+                    LocalTargetDirection = DroneDirectionIndicator(LocalTargetDirection, 炮弹速度 + this.rigidBody.velocity.magnitude);
+
                     TargetDirection = (getCorrTorque(this.transform.forward, LocalTargetDirection - this.transform.position * 1, this.GetComponent<Rigidbody>(), 0.01f * size) * Mathf.Rad2Deg).normalized;
-                    if (Vector3.Angle(transform.forward, LocalTargetDirection - this.transform.position * 1) < 105)
-                    {
-                        GetComponent<Rigidbody>().angularVelocity = (TargetDirection * RotatingSpeed);
-                    }
-                    if (FUcounter % 30 == 0)
+
+                    GetComponent<Rigidbody>().angularVelocity = (TargetDirection * RotatingSpeed);
+
+                    if (FUcounter % 30 == 0 && Vector3.Angle(transform.forward, LocalTargetDirection - this.transform.position * 1) < 15)
                     {
                         CB.Shoot();
                         CB.alreadyShot = false;
-                        if (DroneAIType.Value == 1)
+                        //if (DroneAIType.Value == 1)
+                        //{
+                        if (!NotEvenHavingAJoint)
                         {
-                            if (!NotEvenHavingAJoint)
+                            if (!currentTarget.GetComponent<ConfigurableJoint>())
                             {
-                                if (!currentTarget.GetComponent<ConfigurableJoint>())
-                                {
-                                    currentTarget = null;
-                                }
-                            }
-                            if (!NotEvenHavingAFireTag)
-                            {
-                                if (currentTarget.GetComponent<FireTag>().burning)
-                                {
-                                    currentTarget = null;
-                                }
+                                currentTarget = null;
                             }
                         }
-                        else
+                        if (!NotEvenHavingAFireTag)
                         {
-                            if (currentTarget.GetComponent<EntityAI>())
+                            if (currentTarget.GetComponent<FireTag>().burning)
                             {
-                                if (currentTarget.GetComponent<EntityAI>().isDead == true)
-                                {
-                                    currentTarget = null;
-                                }
-                            }
-                            else if (currentTarget.GetComponent<EnemyAISimple>())
-                            {
-                                if (currentTarget.GetComponent<EnemyAISimple>().isDead == true)
-                                {
-                                    currentTarget = null;
-                                }
+                                currentTarget = null;
                             }
                         }
+                        //}
+                        //else
+                        //{
+                        //    if (currentTarget.GetComponent<EntityAI>())
+                        //    {
+                        //        if (currentTarget.GetComponent<EntityAI>().isDead == true)
+                        //        {
+                        //            currentTarget = null;
+                        //        }
+                        //    }
+                        //    else if (currentTarget.GetComponent<EnemyAISimple>())
+                        //    {
+                        //        if (currentTarget.GetComponent<EnemyAISimple>().isDead == true)
+                        //        {
+                        //            currentTarget = null;
+                        //        }
+                        //    }
+                        //}
                     }
                 }
             }
-            else if (IAmEscaping)
+            else if (IAmEscapingOrReturning)
             {
-                Vector3 LocalTargetDirection = targetPoint;
+                Vector3 LocalTargetDirection = DroneDirectionIndicator(targetPoint, this.rigidBody.velocity.magnitude);
                 PositionIndicator.transform.position = targetPoint;
                 foreach (RaycastHit RH in Physics.RaycastAll(this.transform.position, targetPoint, targetPoint.magnitude))
                 {
                     if (!RH.collider.isTrigger)
                     {
-                        LocalTargetDirection = new Vector3(targetPoint.x, this.transform.position.y, targetPoint.z);
+                        LocalTargetDirection = DroneDirectionIndicator(new Vector3(targetPoint.x, this.transform.position.y, targetPoint.z), this.rigidBody.velocity.magnitude);
                         break;
                     }
                 }
                 TargetDirection = (getCorrTorque(this.transform.forward, LocalTargetDirection - this.transform.position * 1, this.GetComponent<Rigidbody>(), 0.01f * size) * Mathf.Rad2Deg).normalized;
-                if (Vector3.Angle(transform.forward, LocalTargetDirection - this.transform.position * 1) < 105)
-                {
-                    GetComponent<Rigidbody>().angularVelocity = (TargetDirection * RotatingSpeed);
-                }
+
+                GetComponent<Rigidbody>().angularVelocity = (TargetDirection * RotatingSpeed);
+
 
             }
             else
@@ -315,14 +302,67 @@ namespace Blocks
                 IAmSwitching = true;
                 TargetSelector();
             }
+        }
 
-            前一帧速度 = this.GetComponent<Rigidbody>().velocity;
-        }
-        protected override void OnSimulateExit()
+        void WhenAssisting()
         {
-            Destroy(IncomingDetection);
-            Destroy(PositionIndicator);
+            Vector3 TargetDirection;
+            if (IncomingVectors.Length != 0 && !IgnoreIncoming)
+            {
+                Vector3 LocalTargetDirection = this.transform.TransformPoint(-RelativeAverageOfPoints(IncomingVectors, SphereSize));
+                IncomingVectors = new Vector3[0];
+                PositionIndicator.transform.position = this.transform.TransformPoint(LocalTargetDirection);
+
+                TargetDirection = (getCorrTorque(this.transform.forward, LocalTargetDirection - this.transform.position * 1, rigidBody, 0.01f * size) * Mathf.Rad2Deg).normalized;
+                rigidBody.angularVelocity = (TargetDirection * RotatingSpeed);
+            }
+            else if (currentTarget != null)
+            {
+                if (currentTarget.GetComponent<Rigidbody>() && currentTarget.transform.position != this.transform.position)
+                {
+                    Vector3 LocalTargetDirection = currentTarget.transform.position;
+                    targetPoint = currentTarget.transform.position;
+                    PositionIndicator.transform.position = targetPoint;
+
+                    LocalTargetDirection = currentTarget.transform.position;
+                    LocalTargetDirection = DroneDirectionIndicator(LocalTargetDirection, 炮弹速度 + this.rigidBody.velocity.magnitude);
+
+                    TargetDirection = (getCorrTorque(this.transform.forward, LocalTargetDirection - this.transform.position * 1, this.GetComponent<Rigidbody>(), 0.01f * size) * Mathf.Rad2Deg).normalized;
+
+                    GetComponent<Rigidbody>().angularVelocity = (TargetDirection * RotatingSpeed);
+
+                    if (FUcounter % 30 == 0)
+                    {
+                        CB.Shoot();
+                        CB.alreadyShot = false;
+                    }
+                }
+            }
+            else if (IAmEscapingOrReturning)
+            {
+                Vector3 LocalTargetDirection = DroneDirectionIndicator(targetPoint, this.rigidBody.velocity.magnitude);
+                PositionIndicator.transform.position = targetPoint;
+                foreach (RaycastHit RH in Physics.RaycastAll(this.transform.position, targetPoint, targetPoint.magnitude))
+                {
+                    if (!RH.collider.isTrigger)
+                    {
+                        LocalTargetDirection = DroneDirectionIndicator(new Vector3(targetPoint.x, this.transform.position.y, targetPoint.z), this.rigidBody.velocity.magnitude);
+                        break;
+                    }
+                }
+                TargetDirection = (getCorrTorque(this.transform.forward, LocalTargetDirection - this.transform.position * 1, this.GetComponent<Rigidbody>(), 0.01f * size) * Mathf.Rad2Deg).normalized;
+
+                GetComponent<Rigidbody>().angularVelocity = (TargetDirection * RotatingSpeed);
+
+
+            }
+            else
+            {
+                IAmSwitching = true;
+                TargetSelector();
+            }
         }
+
         void TargetSelector()
         {
             List<MachineTrackerMyId> BBList = new List<MachineTrackerMyId>();
@@ -376,7 +416,7 @@ namespace Blocks
                                     }
                                 }
                             }
-                            else if (BBID == 26 || BBID == 55 || BBID == 52 )//Propellers and balloon
+                            else if (BBID == 26 || BBID == 55 || BBID == 52)//Propellers and balloon
                             {
                                 BBList.Add(BB);
                                 ImportanceMultiplier.Add(8);
@@ -497,7 +537,7 @@ namespace Blocks
                         this.targetPoint = new Vector3(UnityEngine.Random.value * 1400 - 700, 500, UnityEngine.Random.value * 1400 - 700);
                     }
                     Debug.Log(targetPoint);
-                    IAmEscaping = true;
+                    IAmEscapingOrReturning = true;
                 }
                 else
                 {
@@ -605,7 +645,7 @@ namespace Blocks
                     {
                         this.targetPoint = new Vector3(UnityEngine.Random.value * 800 - 400, 500, UnityEngine.Random.value * 800 - 400);
                     }
-                    IAmEscaping = true;
+                    IAmEscapingOrReturning = true;
                 }
                 else
                 {

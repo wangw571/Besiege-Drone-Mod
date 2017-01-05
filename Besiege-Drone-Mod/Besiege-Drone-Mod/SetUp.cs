@@ -93,14 +93,21 @@ namespace Blocks
 
             ///碰撞器
             .CompoundCollider(new List<ColliderComposite> {
-                ColliderComposite.Mesh("zDrone.obj",Vector3.one,Vector3.forward * 3f,Vector3.zero),
+                ColliderComposite.Mesh("zDroneColl.obj",Vector3.one,Vector3.forward * 3f,Vector3.zero)
             })
 
             ///你的模块是不是可以忽视强搭
             //.IgnoreIntersectionForBase()
 
             ///载入资源
-            .NeededResources(null)
+            .NeededResources(new List<NeededResource>
+            {
+                //new NeededResource(ResourceType.Mesh,"zDroneColl.obj")
+                                new NeededResource(ResourceType.Texture,"zDroneBump.png")
+
+
+            }
+            )
 
             ///连接点
             .AddingPoints(new List<AddingPoint> {
@@ -126,31 +133,33 @@ namespace Blocks
     {
         MKey Activation;
         MKey Engage;
+        MKey Recall;
         MKey ForceEngage;
         MMenu DroneAIType;
         MMenu DroneSize;
         MMenu Difficulty;
         MSlider OrbitRadius;
-        MMenu DroneWeapon;
+        //MMenu DroneWeapon;
         MSlider DroneAmount;
         MToggle ContinousSpawn;
         MSlider DroneTag;
 
+        List<FullyAIDrone> AIDroneList;
+
         GameObject DetectiveSphere;
         public override void SafeAwake()
         {
-            Activation = new MKey("Activate Spawning Drones", "Activate", KeyCode.P);
-            Activation.DisplayInMapper = false;
             Engage = new MKey("Engage", "Engage", KeyCode.T);
             ForceEngage = new MKey("Forced Engege", "FEngage", KeyCode.X);
-            DroneAIType = new MMenu("AIType", 0, new List<string>() { "Assistantnce", "Computer Controlled" });
-            DroneSize = new MMenu("SizeType", 0, new List<string>() { "Heavt", "Medium", "Light" });
-            Difficulty = new MMenu("Difficulty", 0, new List<string>() { "Aggressive", "Defensive", "For Practice" });
+            Recall = AddKey("Recall", "Rc", KeyCode.R);
+            //DroneSize = new MMenu("SizeType", 0, new List<string>() { "Heavt", "Medium", "Light" });
+            //Difficulty = new MMenu("Difficulty", 0, new List<string>() { "Aggressive", "Defensive", "For Practice" });
             //Aggressive: To all moving items|Defensive: Only to aggressive blocks|For Practice: Flying around, keeping radar function, 
             OrbitRadius = new MSlider("Orbit Radius", "OrbitRadius", 15, 5, 200);
-            DroneAmount = new MSlider("Drone Amount", "Amount", 3, 1, 15);
-            ContinousSpawn = new MToggle("Spawn Drones\r\n after losing", "CSpawn", false);
+            //DroneAmount = new MSlider("Drone Amount", "Amount", 3, 1, 15);
+            //ContinousSpawn = new MToggle("Spawn Drones\r\n after losing", "CSpawn", false);
             DroneTag = new MSlider("Drone Tag", "Tag", 0, 0, 100);
+            AIDroneList = new List<FullyAIDrone>();
         }
         protected override void BuildingUpdate()
         {
@@ -188,6 +197,15 @@ namespace Blocks
                      }
                  }
              }*/
+        }
+        protected override void OnSimulateUpdate()
+        {
+            base.OnSimulateUpdate();
+        }
+
+        public void PleaseGiveMeNewOrbitPoint(Vector3 NowPoistion, Vector3 NowEuler)
+        {
+
         }
     }
 

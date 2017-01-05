@@ -36,6 +36,10 @@ namespace Blocks
         public Vector3 VelocityRecorder;
         protected Vector3 PreviousPosition;
 
+        public override void SafeAwake()
+        {
+            base.SafeAwake();
+        }
 
         protected Vector2 formulaProjectile(float X, float Y, float V, float G)
         {
