@@ -144,7 +144,7 @@ namespace Blocks
         //MMenu DroneWeapon;
         MSlider DroneAmount;
         MToggle ContinousSpawn;
-        MSlider DroneTag;
+        public MSlider DroneTag;
 
         public List<FullyAIDrone> AIDroneList;
         public List<Vector3> RelativeLeavePositions;
@@ -275,9 +275,13 @@ namespace Blocks
             }
         }
 
-        public void PleaseGiveMeNewOrbitPoint(Vector3 NowPoistion, Vector3 NowEuler)
+        public Vector3 PleaseGiveMeNewOrbitPoint(Vector3 NowPoistion, Vector3 MyVeloDirection, bool GiveMeRandom)
         {
+            Vector3 Relatived = this.transform.InverseTransformPoint(NowPoistion);
+            Vector3 Returner = Vector3.zero;
 
+
+            return Returner;
         }
     }
 

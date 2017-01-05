@@ -15,6 +15,7 @@ namespace Blocks
         float SphereSize = 30;
         float MinimumAccelerationSqrToTakeDamage = 20f;
         int AIDifficultyValue;
+        DroneControlBlockBehavior MyControl;
 
         protected MKey Activation;
         protected MMenu DroneAIType;
@@ -65,10 +66,24 @@ namespace Blocks
 
         protected override void OnSimulateFixedStart()
         {
+            if (DroneAIType.Value == 1)
+            {
+                IAmSwitching = true;
+                TargetSelector();
+            }
+            else
+            {
+                foreach (DroneControlBlockBehavior DCBB in Machine.Active().SimulationMachine.GetComponentsInChildren<DroneControlBlockBehavior>())
+                {
+                    if(DCBB.DroneTag.Value == this.DroneTag.Value)
+                    {
+                        DCBB.AIDroneList.Add(this);
+                        MyControl = DCBB;
+                        break;
+                    }
+                }
+            }
 
-
-            IAmSwitching = true;
-            TargetSelector();
             Shooter = Instantiate(PrefabMaster.BlockPrefabs[11].gameObject);
             Shooter.transform.parent = this.transform;
             Shooter.transform.position = this.transform.position;
@@ -87,7 +102,7 @@ namespace Blocks
             MySize = 1;
             精度 = 0.25f;
             size = 1;
-            SetUpHP(500);
+            SetUpHP(110);
             RotatingSpeed = 3;
             PositionIndicator = Instantiate(GameObject.CreatePrimitive(PrimitiveType.Sphere));
             DestroyImmediate(PositionIndicator.GetComponent<Rigidbody>());
@@ -195,8 +210,8 @@ namespace Blocks
             {
                 IgnoreIncoming = !IAmEscapingOrReturning;
             }
-            
-            if(DroneAIType.Value == 1)
+
+            if (DroneAIType.Value == 1)
             {
                 WhatComputerWillDo();
             }
@@ -310,7 +325,7 @@ namespace Blocks
                 TargetDirection = (getCorrTorque(this.transform.forward, LocalTargetDirection - this.transform.position * 1, this.GetComponent<Rigidbody>(), 0.01f * size) * Mathf.Rad2Deg).normalized;
 
                 GetComponent<Rigidbody>().angularVelocity = (TargetDirection * RotatingSpeed);
-                
+
             }
             else
             {
@@ -322,6 +337,16 @@ namespace Blocks
         void WhenAssisting()
         {
             Vector3 TargetDirection;
+
+
+            if (this.transform.InverseTransformPoint(targetPoint).sqrMagnitude <= 100 && DroneAIType.Value == 1)
+            {
+                IAmEscapingOrReturning = false;
+                FUcounter = 0;
+                IAmSwitching = false;
+            }
+
+
             if (IncomingVectors.Length != 0 && !IgnoreIncoming)
             {
                 Vector3 LocalTargetDirection = this.transform.TransformPoint(-RelativeAverageOfPoints(IncomingVectors, SphereSize));
@@ -368,13 +393,6 @@ namespace Blocks
                 TargetDirection = (getCorrTorque(this.transform.forward, LocalTargetDirection - this.transform.position * 1, this.GetComponent<Rigidbody>(), 0.01f * size) * Mathf.Rad2Deg).normalized;
 
                 GetComponent<Rigidbody>().angularVelocity = (TargetDirection * RotatingSpeed);
-
-
-            }
-            else
-            {
-                IAmSwitching = true;
-                TargetSelector();
             }
         }
 
