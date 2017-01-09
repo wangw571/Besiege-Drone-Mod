@@ -77,7 +77,7 @@ namespace Blocks
             if (iterativeCount > 512) { iterativeCount = 0; return hitPoint; }
             if (hitPoint == Vector3.zero || gunVelocity < 1)
             {
-                return currentTarget.transform.position;
+                return TargetPosition;
             }
             Vector3 gunDirection = new Vector3(hitPoint.x, gunPosition.y, hitPoint.z) - gunPosition;
             Quaternion gunRotation = Quaternion.FromToRotation(gunDirection, Vector3.forward);
@@ -85,7 +85,7 @@ namespace Blocks
             float currentCalculatedDistance = (hitPoint - gunPosition).magnitude;
 
             float b2M4ac = gunVelocity * gunVelocity - 4 * AirDrag * currentCalculatedDistance;
-            if (b2M4ac < 0) { /*Debug.Log("Nan!!!" + (gunVelocity * gunVelocity - 2 * AirDrag * currentCalculatedDistance));*/ return currentTarget.transform.position; }
+            if (b2M4ac < 0) { /*Debug.Log("Nan!!!" + (gunVelocity * gunVelocity - 2 * AirDrag * currentCalculatedDistance));*/ return TargetPosition; }
             float V = (float)Math.Sqrt(b2M4ac);
             float X = localHitPoint.z;//z为前方
             float Y = localHitPoint.y;
@@ -93,7 +93,7 @@ namespace Blocks
             if (TT == Vector2.zero)
             {
                 iterativeCount = 0;
-                return currentTarget.transform.position;
+                return TargetPosition;
             }
             float VT = TargetVelocity;
             Vector3 PT = TargetPosition;
@@ -104,7 +104,7 @@ namespace Blocks
             if (diff1 > diff)
             {
                 iterativeCount = 0;
-                return currentTarget.transform.position;
+                return TargetPosition;
             }
             if (diff1 < accuracy)
             {
@@ -122,7 +122,7 @@ namespace Blocks
             if (iterativeCount > 512) { iterativeCount = 0; return TargetPosition; }
             if (hitPoint == Vector3.zero || gunVelocity < 1)
             {
-                return currentTarget.transform.position;
+                return TargetPosition;
             }
             Vector3 gunDirection = new Vector3(hitPoint.x, gunPosition.y, hitPoint.z) - gunPosition;
             Quaternion gunRotation = Quaternion.FromToRotation(gunDirection, Vector3.forward);
@@ -138,7 +138,7 @@ namespace Blocks
             if (TT == Vector2.zero)
             {
                 iterativeCount = 0;
-                return currentTarget.transform.position;
+                return TargetPosition;
             }
             float VT = TargetVelocity + targetAcceleration * currentCalculatedDistance;
             Vector3 PT = TargetPosition;
@@ -149,7 +149,7 @@ namespace Blocks
             if (diff1 > diff)
             {
                 iterativeCount = 0;
-                return currentTarget.transform.position;
+                return TargetPosition;
             }
             if (diff1 < accuracy)
             {
@@ -314,7 +314,7 @@ namespace Blocks
         }
 
 
-        protected Vector3 DroneDirectionIndicator(Vector3 LocalTargetDirection, float CalculationSpeed)
+        protected Vector3 DroneDirectionIndicator(Vector3 LocalTargetDirection,Vector3 CurrentTargetPoistion, float CalculationSpeed)
         {
             float targetVelo = targetVeloAveraged.magnitude;
             Vector3 TargetDirection = targetVeloAveraged.normalized;
@@ -352,13 +352,13 @@ namespace Blocks
                 0.2f,
                 this.transform.position,
                 targetVelo,
-                currentTarget.transform.position,
+                CurrentTargetPoistion,
                 TargetDirection,
                     calculateLinearTrajectory(
                         CalculationSpeed,
                         this.transform.position,
                         targetVelo,
-                        currentTarget.transform.position,
+                        CurrentTargetPoistion,
                         TargetDirection
                     ),
                     Physics.gravity.y,
@@ -367,11 +367,11 @@ namespace Blocks
                     );
             目标前帧速度Mag = targetVelo;
 
-            if (LocalTargetDirection.y == float.NaN)
+            if (LocalTargetDirection.y == float.NaN && currentTarget)
             {
                 LocalTargetDirection = currentTarget.transform.position;
             }
-            前一帧速度 = GetComponent<Rigidbody>().velocity;
+            前一帧速度 = rigidBody.velocity;
             return LocalTargetDirection;
         }
         protected Vector3 RelativeAverageOfPoints(Vector3[] Vector3s, float SphereSize)

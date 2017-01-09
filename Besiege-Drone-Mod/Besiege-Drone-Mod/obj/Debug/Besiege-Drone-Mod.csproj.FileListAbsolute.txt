@@ -1,0 +1,16 @@
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\bin\Debug\Besiege-Drone-Mod.dll
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\bin\Debug\Besiege-Drone-Mod.pdb
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\bin\Debug\Assembly-CSharp-firstpass.dll
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\bin\Debug\Assembly-CSharp.dll
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\bin\Debug\Assembly-UnityScript-firstpass.dll
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\bin\Debug\Assembly-UnityScript.dll
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\bin\Debug\SpaarModLoader.dll
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\bin\Debug\UnityEngine.dll
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\bin\Debug\Boo.Lang.dll
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\bin\Debug\UnityScript.Lang.dll
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\bin\Debug\UnityEngine.UI.dll
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\bin\Debug\DynamicText.dll
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\bin\Debug\UnityEngine.xml
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\obj\Debug\Besiege-Drone-Mod.csprojResolveAssemblyReference.cache
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\obj\Debug\Besiege-Drone-Mod.dll
+C:\Users\wang_\OneDrive\VS Projects-Besiege Mods\Besiege-Drone-Mod\Besiege-Drone-Mod\Besiege-Drone-Mod\obj\Debug\Besiege-Drone-Mod.pdb

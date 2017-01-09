@@ -49,13 +49,12 @@ namespace Blocks
         public override string DisplayName { get; } = "Drone Deployment Block";
         public override string Author { get; } = "wang_w571";
         public override Version Version { get; } = new Version("0.53");
-        protected Block Block = new Block()
+        protected Block Drone = new Block()
             ///模块ID
             .ID(575)
 
             ///模块名称
-            //.BlockName("Tracking Computer I")
-            .BlockName("meow I")
+            .BlockName("Drone I")
 
             ///模型信息
             .Obj(new List<Obj> { new Obj("zDrone.obj", //Obj
@@ -116,10 +115,43 @@ namespace Blocks
                                                 .SetStickyRadius(0f),
             new AddingPoint(new Vector3(0f, 0.2f, 1.5f), new Vector3(-180f, 00f, 360f),true).SetStickyRadius(0.3f)
             });
+
+        protected Block ControlBlock = new Block()
+            .ID(576)
+            .BlockName("Drone Controller Block")
+            .Obj(new List<Obj> { new Obj("DroneColtroller.obj", //Obj
+                                         "DroneController.png", //贴图
+                                         new VisualOffset(new Vector3(1f, 1f, 1f), //Scale
+                                                          new Vector3(0f, 0f, 0f), //Position
+                                                          new Vector3(0f, 0f, 0f)))//Rotation
+            })
+            ///在UI下方的选模块时的模样
+            .IconOffset(new Icon(new Vector3(1.30f, 1.30f, 1.30f),  //Scale
+                                 new Vector3(-0.11f, -0.13f, 0.00f),  //Position
+                                 new Vector3(45f, 45f, 45f))) //Rotation
+            .Components(new Type[] { typeof(DroneControlBlockBehavior), })
+
+            ///给搜索用的关键词
+            .Properties(new BlockProperties().SearchKeywords(new string[] {
+                                                             "Drone",
+                                                             "控制",
+                                                             "Spawner",
+                                             }))
+            .Mass(0.5f)
+            .ShowCollider(false)
+            .CompoundCollider(new List<ColliderComposite> { new ColliderComposite(new Vector3(1, 1, 1), new Vector3(0f, 0f, 0.5f), new Vector3(0f, 0f, 0f)) })
+            .NeededResources(null
+            )
+            .AddingPoints(new List<AddingPoint> {
+                               (AddingPoint)new BasePoint(true, true)
+                                                .Motionable(false,false,false)
+                                                .SetStickyRadius(0.5f),
+            });
         public override void OnLoad()
         {
             // Your initialization code here
-            LoadBlock(Block);
+            LoadBlock(Drone);
+            LoadBlock(ControlBlock);
         }
 
         public override void OnUnload()
@@ -156,37 +188,43 @@ namespace Blocks
         GameObject Target;
         public override void SafeAwake()
         {
-            Engage = new MKey("Engage", "Engage", KeyCode.T);
-            ForceEngage = new MKey("Forced Engege", "FEngage", KeyCode.X);
+            Engage = AddKey("Engage", "Engage", KeyCode.T);
+            ForceEngage = AddKey("Forced Engege", "FEngage", KeyCode.X);
             Recall = AddKey("Recall", "Rc", KeyCode.R);
             //DroneSize = new MMenu("SizeType", 0, new List<string>() { "Heavt", "Medium", "Light" });
             //Difficulty = new MMenu("Difficulty", 0, new List<string>() { "Aggressive", "Defensive", "For Practice" });
             //Aggressive: To all moving items|Defensive: Only to aggressive blocks|For Practice: Flying around, keeping radar function, 
-            OrbitRadius = new MSlider("Orbit Radius", "OrbitRadius", 15, 5, 200);
+            OrbitRadius = AddSlider("Orbit Radius", "OrbitRadius", 15, 5, 200);
             //DroneAmount = new MSlider("Drone Amount", "Amount", 3, 1, 15);
             //ContinousSpawn = new MToggle("Spawn Drones\r\n after losing", "CSpawn", false);
-            DroneTag = new MSlider("Drone Tag", "Tag", 0, 0, 100);
+            DroneTag = AddSlider("Drone Tag", "Tag", 0, 0, 100);
+
             AIDroneList = new List<FullyAIDrone>();
+        }
+        public override void OnSave(XDataHolder data)
+        {
+            SaveMapperValues(data);
+        }
+        public override void OnLoad(XDataHolder data)
+        {
+            LoadMapperValues(data);
+            if (data.WasSimulationStarted) return;
         }
         protected override void BuildingUpdate()
         {
             DroneTag.Value = (int)DroneTag.Value;
-            if (DroneAIType.Value == 0)
+            /*if (DroneAIType.Value == 0)
             {
-                Activation.DisplayInMapper = false;
                 Engage.DisplayInMapper = true;
                 ForceEngage.DisplayInMapper = true;
                 OrbitRadius.DisplayInMapper = true;
-                Difficulty.DisplayInMapper = false;
             }
             else
             {
-                Activation.DisplayInMapper = true;
                 Engage.DisplayInMapper = false;
                 ForceEngage.DisplayInMapper = false;
                 OrbitRadius.DisplayInMapper = false;
-                Difficulty.DisplayInMapper = true;
-            }
+            }*/
         }
         protected override void OnSimulateFixedStart()
         {
@@ -207,22 +245,44 @@ namespace Blocks
         }
         protected override void OnSimulateUpdate()
         {
+            //Debug.Log(AIDroneList.Count);
             if (Engage.IsPressed)
             {
-                if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hitt, float.PositiveInfinity))
+                RaycastHit[] rhs = Physics.RaycastAll(Camera.main.ScreenPointToRay(Input.mousePosition), float.PositiveInfinity);
+                if (rhs.Length != 0)
                 {
-                    if (hitt.transform.position != this.transform.position && hitt.collider.attachedRigidbody != null)
+                    foreach (RaycastHit hit in rhs)
                     {
-                        Target = hitt.transform.gameObject;
-                        if (Target.GetComponentInParent<MachineTrackerMyId>() || this.name.Contains(("IsCloaked")))
+                        if (hit.transform.position != this.transform.position && hit.collider.attachedRigidbody != null && !hit.collider.isTrigger)
                         {
-                            if (Target.GetComponentInParent<MachineTrackerMyId>().gameObject.name.Contains("IsCloaked") || this.name.Contains(("IsCloaked")))
+                            Target = hit.transform.gameObject;
+                            if (Target.GetComponentInParent<MachineTrackerMyId>() || this.name.Contains(("IsCloaked")))
                             {
-                                Target = null;
+                                if (Target.GetComponentInParent<MachineTrackerMyId>().gameObject.name.Contains("IsCloaked") || this.name.Contains(("IsCloaked")))
+                                {
+                                    Target = null;
+                                    continue;
+                                }
                             }
+                            break;
                         }
                     }
                 }
+
+                //if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hitt, float.PositiveInfinity))
+                //{
+                //    if (hitt.transform.position != this.transform.position && hitt.collider.attachedRigidbody != null)
+                //    {
+                //        Target = hitt.transform.gameObject;
+                //        if (Target.GetComponentInParent<MachineTrackerMyId>() || this.name.Contains(("IsCloaked")))
+                //        {
+                //            if (Target.GetComponentInParent<MachineTrackerMyId>().gameObject.name.Contains("IsCloaked") || this.name.Contains(("IsCloaked")))
+                //            {
+                //                Target = null;
+                //            }
+                //        }
+                //    }
+                //}
                 foreach (FullyAIDrone FAD in AIDroneList)
                 {
                     FAD.currentTarget = Target;
@@ -230,20 +290,27 @@ namespace Blocks
             }
             if (ForceEngage.IsPressed)
             {
-                if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hitt, float.PositiveInfinity))
+                RaycastHit[] rhs = Physics.RaycastAll(Camera.main.ScreenPointToRay(Input.mousePosition), float.PositiveInfinity);
+                if (rhs.Length != 0)
                 {
-                    if (hitt.transform.position != this.transform.position && hitt.collider.attachedRigidbody != null)
+                    foreach (RaycastHit hit in rhs)
                     {
-                        Target = hitt.transform.gameObject;
-                        if (Target.GetComponentInParent<MachineTrackerMyId>() || this.name.Contains(("IsCloaked")))
+                        if (hit.transform.position != this.transform.position && hit.collider.attachedRigidbody != null && !hit.collider.isTrigger)
                         {
-                            if (Target.GetComponentInParent<MachineTrackerMyId>().gameObject.name.Contains("IsCloaked") || this.name.Contains(("IsCloaked")))
+                            Target = hit.transform.gameObject;
+                            if (Target.GetComponentInParent<MachineTrackerMyId>() || this.name.Contains(("IsCloaked")))
                             {
-                                Target = null;
+                                if (Target.GetComponentInParent<MachineTrackerMyId>().gameObject.name.Contains("IsCloaked") || this.name.Contains(("IsCloaked")))
+                                {
+                                    Target = null;
+                                    continue;
+                                }
                             }
+                            break;
                         }
                     }
                 }
+
                 foreach (FullyAIDrone FAD in AIDroneList)
                 {
                     FAD.currentTarget = Target;
@@ -252,11 +319,15 @@ namespace Blocks
             }
             if (Recall.IsPressed)
             {
-                foreach (FullyAIDrone FAD in AIDroneList)
+                if (Engaging)
                 {
-                    FAD.currentTarget = null;
-                    FAD.IgnoreIncoming = false;
-                    FAD.targetPoint = RelativeLeavePositions[AIDroneList.IndexOf(FAD)];
+                    foreach (FullyAIDrone FAD in AIDroneList)
+                    {
+                        FAD.currentTarget = null;
+                        FAD.IgnoreIncoming = false;
+                        FAD.IAmEscapingOrReturning = true;
+                        FAD.targetPoint = RelativeLeavePositions[AIDroneList.IndexOf(FAD)];
+                    }
                 }
             }
         }
@@ -270,7 +341,7 @@ namespace Blocks
                 RelativeLeavePositions = new List<Vector3>();
                 foreach (FullyAIDrone FAD in AIDroneList)
                 {
-                    RelativeLeavePositions.Add(FAD.transform.position);
+                    RelativeLeavePositions.Add(this.transform.InverseTransformPoint(FAD.transform.position));
                 }
             }
         }
@@ -279,9 +350,49 @@ namespace Blocks
         {
             Vector3 Relatived = this.transform.InverseTransformPoint(NowPoistion);
             Vector3 Returner = Vector3.zero;
-
+            float DroneRelativeAngleX = Vector3.Angle(transform.forward, new Vector3(Relatived.x, 0, Relatived.z));
+            float DroneRelativeAngleY = Vector3.Angle(transform.forward, new Vector3(0, Relatived.y, Relatived.z));
+            if (!GiveMeRandom)
+            {
+                Vector3 one = EulerToDirection(DroneRelativeAngleX + 15, DroneRelativeAngleY + 15) * OrbitRadius.Value;
+                Vector3 two = EulerToDirection(DroneRelativeAngleX + 15, DroneRelativeAngleY - 15) * OrbitRadius.Value;
+                Vector3 three = EulerToDirection(DroneRelativeAngleX - 15, DroneRelativeAngleY + 15) * OrbitRadius.Value;
+                Vector3 four = EulerToDirection(DroneRelativeAngleX - 15, DroneRelativeAngleY - 15) * OrbitRadius.Value;
+                //Vector3.Min(Vector3.Min(Returner - one, Returner - two), Vector3.Min(Returner - three, Returner - four));
+                if(Vector3.SqrMagnitude((Relatived + MyVeloDirection) - four) > Vector3.SqrMagnitude((Relatived + MyVeloDirection) - three))
+                {
+                    Returner = three;
+                }
+                else if(Vector3.SqrMagnitude((Relatived + MyVeloDirection) - three) > Vector3.SqrMagnitude((Relatived + MyVeloDirection) - two))
+                {
+                    Returner = two;
+                }
+                else if (Vector3.SqrMagnitude((Relatived + MyVeloDirection) - two) > Vector3.SqrMagnitude((Relatived + MyVeloDirection) - one))
+                {
+                    Returner = one;
+                }
+                else if (Vector3.SqrMagnitude((Relatived + MyVeloDirection) - one) > Vector3.SqrMagnitude((Relatived + MyVeloDirection) - four))
+                {
+                    Returner = four;
+                }
+                //Returner = EulerToDirection(UnityEngine.Random.value * 360 - 180, 15) * OrbitRadius.Value;
+            }
+            else
+            {
+                Returner = EulerToDirection(UnityEngine.Random.value * 360 - 180, UnityEngine.Random.value * 720 - 360) * OrbitRadius.Value;
+            }
 
             return Returner;
+        }
+        Vector3 EulerToDirection(float Elevation, float Heading)
+        {
+            float elevation = Elevation * Mathf.Deg2Rad;
+            float heading = Heading * Mathf.Deg2Rad;
+            return new Vector3(Mathf.Cos(elevation) * Mathf.Sin(heading), Mathf.Sin(elevation), Mathf.Cos(elevation) * Mathf.Cos(heading));
+        }
+        protected void LogFo()
+        {
+            Debug.Log("fofo");
         }
     }
 
