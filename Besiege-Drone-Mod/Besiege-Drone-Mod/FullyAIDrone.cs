@@ -141,21 +141,20 @@ namespace Blocks
         protected override void OnSimulateFixedUpdate()
         {
             ++FUcounter;
-            if (HitPoints <= 0 && FUcounter%50 ==0)
+            if (HitPoints <= 0)
             {
-                GameObject boom = (GameObject)Instantiate(PrefabMaster.BlockPrefabs[54].gameObject,this.transform.position,this.transform.rotation);
-                DestroyImmediate(boom.GetComponent<Renderer>());
-                DestroyImmediate(boom.GetComponent<Collider>());
-                boom.GetComponent<ControllableBomb>().power = 0;
-                boom.GetComponent<ControllableBomb>().upPower = 0;
-                boom.GetComponent<ControllableBomb>().radius = 0;
-                boom.GetComponent<ControllableBomb>().randomDelay = 0;
-                boom.AddComponent<TimedSelfDestruct>();
-                StartCoroutine(boom.GetComponent<ControllableBomb>().Explode());
-                return;
-            }
-            if(HitPoints <= 0)
-            {
+                if (FUcounter % 50 == 0)
+                {
+                    GameObject boom = (GameObject)Instantiate(PrefabMaster.BlockPrefabs[54].gameObject, this.transform.position, this.transform.rotation);
+                    DestroyImmediate(boom.GetComponent<Renderer>());
+                    DestroyImmediate(boom.GetComponent<Collider>());
+                    boom.GetComponent<ControllableBomb>().power = 0;
+                    boom.GetComponent<ControllableBomb>().upPower = 0;
+                    boom.GetComponent<ControllableBomb>().radius = 0;
+                    boom.GetComponent<ControllableBomb>().randomDelay = 0;
+                    boom.AddComponent<TimedSelfDestruct>();
+                    StartCoroutine(boom.GetComponent<ControllableBomb>().Explode());
+                }
                 return;
             }
             Shooter.transform.localEulerAngles = Vector3.right * 270;
