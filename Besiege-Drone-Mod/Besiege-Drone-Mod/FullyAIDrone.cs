@@ -96,13 +96,16 @@ namespace Blocks
 
             Shooter = Instantiate(PrefabMaster.BlockPrefabs[11].gameObject);
             Shooter.transform.parent = this.transform;
-            Shooter.transform.position = this.transform.position;
-            Shooter.transform.rotation = this.transform.rotation;
             Destroy(Shooter.GetComponent<ConfigurableJoint>());
-            Shooter.GetComponent<Rigidbody>().isKinematic = true;
-            Shooter.GetComponent<Rigidbody>().mass = 0;
-            Destroy(Shooter.GetComponent<Collider>());
             炮弹速度 = 5 * 58;
+            Shooter.transform.localEulerAngles = Vector3.right * 270;
+            Shooter.transform.localPosition = Vector3.up * 0.8f + Vector3.forward * 3f;
+            Destroy(Shooter.GetComponentInChildren<CapsuleCollider>());
+            CB = Shooter.GetComponent<CanonBlock>();
+            CB.knockbackSpeed = 30;
+            CB.myRigidbody = rigidbody;
+            Destroy(Shooter.GetComponent<Rigidbody>());
+            CB.Sliders[0].Value = 5;
 
             MeshCollider MC = this.transform.GetComponentInChildren<MeshCollider>();
             MC.material.dynamicFriction = 0;
@@ -113,7 +116,7 @@ namespace Blocks
             精度 = 0.25f;
             size = 1;
             SetUpHP(200);
-            RotatingSpeed = 4f;
+            RotatingSpeed = 1f;
             PositionIndicator = Instantiate(GameObject.CreatePrimitive(PrimitiveType.Sphere));
             DestroyImmediate(PositionIndicator.GetComponent<Rigidbody>());
             DestroyImmediate(PositionIndicator.GetComponent<Collider>());
@@ -157,19 +160,12 @@ namespace Blocks
                 }
                 return;
             }
-            Shooter.transform.localEulerAngles = Vector3.right * 270;
-            Shooter.transform.localPosition = Vector3.up * 0.8f + Vector3.forward * 3f;
-            /*Shooter.GetComponent<Rigidbody>().mass = 0;
-            Shooter.GetComponent<Rigidbody>().isKinematic = true;*/
-            Destroy(Shooter.GetComponentInChildren<CapsuleCollider>());
-            CB = Shooter.GetComponent<CanonBlock>();
-            CB.Sliders[0].Value = 5;
+            
 
             Vector3 RelativeVelo = this.transform.InverseTransformDirection(this.rigidBody.velocity);
             this.rigidBody.AddRelativeForce(new Vector3(RelativeVelo.x * -15, RelativeVelo.y * -15, 0));
             HPCalculation(MinimumAccelerationSqrToTakeDamage);
             PositionIndicator.transform.position = targetPoint;
-            rigidbody.AddRelativeForce(Vector3.forward * 30 * this.rigidbody.mass);//Need calculate size
 
             if (!IAmEscapingOrReturning)
             {
@@ -220,7 +216,6 @@ namespace Blocks
                 IncomingDetection.name = "IncomingDetection";
                 IncomingDetection.transform.position = this.transform.position;
                 //IncomingDetection.GetComponent<SphereCollider>().radius = SphereSize;
-                IncomingDetection.transform.localScale = Vector3.one * SphereSize * 2;
                 //IncomingDetection.GetComponent<Renderer>().material = new Material(Shader.Find("Transparent/Diffuse"));
                 //IncomingDetection.GetComponent<Renderer>().material.color = new Color(0.5f, 0, 0, 0.5f);
 
@@ -235,6 +230,7 @@ namespace Blocks
                 IncomingDetection.GetComponent<SphereCollider>().isTrigger = true;
                 //IncomingDetection.GetComponent<SphereCollider>().center = Vector3.up * -SphereSize;
             }
+            IncomingDetection.transform.localScale = Vector3.one * SphereSize * 2;
             IncomingDetection.transform.rotation = this.transform.rotation;
             IncomingDetection.transform.position = Shooter.transform.position;
             IncomingDetection.name = "IncomingDetection" + IncomingDetection.transform.position;
@@ -254,7 +250,9 @@ namespace Blocks
                 WhenAssisting();
             }
 
-            前一帧速度 = this.GetComponent<Rigidbody>().velocity;
+            前一帧速度 = rigidBody.velocity;
+
+            SphereSize = Mathf.Max(15, rigidBody.velocity.magnitude);
         }
         protected override void OnSimulateExit()
         {
@@ -264,6 +262,8 @@ namespace Blocks
 
         void WhatComputerWillDo()
         {
+            Vector3 LocalTargetDirection = targetPoint;
+
             if (HitPoints <= (this.rigidBody.velocity - targetVeloAveraged).sqrMagnitude)
             {
                 IgnoreIncoming = true;
@@ -272,7 +272,7 @@ namespace Blocks
             Vector3 TargetDirection;
             if (IncomingVectors.Length != 0 && !IgnoreIncoming)
             {
-                Vector3 LocalTargetDirection = this.transform.TransformPoint(-RelativeAverageOfPoints(IncomingVectors, SphereSize));
+                LocalTargetDirection = this.transform.TransformPoint(-RelativeAverageOfPoints(IncomingVectors, SphereSize));
                 IncomingVectors = new Vector3[0];
                 PositionIndicator.transform.position = this.transform.TransformPoint(LocalTargetDirection);
 
@@ -291,7 +291,7 @@ namespace Blocks
             {
                 if (currentTarget.GetComponent<Rigidbody>() && currentTarget.transform.position != this.transform.position)
                 {
-                    Vector3 LocalTargetDirection = currentTarget.transform.position;
+                    LocalTargetDirection = currentTarget.transform.position;
                     targetPoint = currentTarget.transform.position;
                     PositionIndicator.transform.position = targetPoint;
 
@@ -346,7 +346,7 @@ namespace Blocks
             }
             else if (IAmEscapingOrReturning)
             {
-                Vector3 LocalTargetDirection = DroneDirectionIndicator(targetPoint, targetPoint, this.rigidBody.velocity.magnitude);
+                LocalTargetDirection = DroneDirectionIndicator(targetPoint, targetPoint, this.rigidBody.velocity.magnitude);
                 PositionIndicator.transform.position = targetPoint;
                 foreach (RaycastHit RH in Physics.RaycastAll(this.transform.position, targetPoint, targetPoint.magnitude))
                 {
@@ -366,11 +366,13 @@ namespace Blocks
                 IAmSwitching = true;
                 TargetSelector();
             }
+            rigidbody.AddRelativeForce(Vector3.forward * Mathf.Min(38, (180 - Math.Abs(Vector3.Angle(transform.forward, LocalTargetDirection - this.transform.position * 1)) * 38 / 180)) * this.rigidbody.mass);//Need calculate size
         }
 
         void WhenAssisting()
         {
             Vector3 TargetDirection;
+            Vector3 LocalTargetDirection = targetPoint;
             /*if (this.transform.InverseTransformPoint(targetPoint).sqrMagnitude <= 25 && DroneAIType.Value == 1)
             {
                 targetPoint = MyControl.PleaseGiveMeNewOrbitPoint(this.transform.position, this.rigidBody.velocity.normalized, false);
@@ -395,7 +397,7 @@ namespace Blocks
 
             if (IncomingVectors.Length != 0 && !IgnoreIncoming)
             {
-                Vector3 LocalTargetDirection = this.transform.TransformPoint(-RelativeAverageOfPoints(IncomingVectors, SphereSize));
+                LocalTargetDirection = this.transform.TransformPoint(-RelativeAverageOfPoints(IncomingVectors, SphereSize));
                 IncomingVectors = new Vector3[0];
                 PositionIndicator.transform.position = this.transform.TransformPoint(LocalTargetDirection);
 
@@ -406,7 +408,7 @@ namespace Blocks
             {
                 if (currentTarget.GetComponent<Rigidbody>() && currentTarget.transform.position != this.transform.position)
                 {
-                    Vector3 LocalTargetDirection = currentTarget.transform.position;
+                    LocalTargetDirection = currentTarget.transform.position;
                     targetPoint = currentTarget.transform.position;
                     PositionIndicator.transform.position = targetPoint;
 
@@ -426,7 +428,7 @@ namespace Blocks
             }
             else if (IAmEscapingOrReturning)
             {
-                Vector3 LocalTargetDirection = DroneDirectionIndicator(MyControl.transform.TransformPoint(targetPoint), MyControl.transform.TransformPoint(targetPoint), this.rigidBody.velocity.magnitude);
+                LocalTargetDirection = DroneDirectionIndicator(MyControl.transform.TransformPoint(targetPoint), MyControl.transform.TransformPoint(targetPoint), this.rigidBody.velocity.magnitude);
                 PositionIndicator.transform.position = MyControl.transform.TransformPoint(targetPoint);
 
                 LocalTargetDirection = MyControl.transform.position;
@@ -445,6 +447,7 @@ namespace Blocks
                 TargetDirection = (getCorrTorque(this.transform.forward, LocalTargetDirection - this.transform.position * 1, this.GetComponent<Rigidbody>(), 0.01f * size) * Mathf.Rad2Deg).normalized;
                 GetComponent<Rigidbody>().angularVelocity = (TargetDirection * RotatingSpeed);
             }
+            rigidbody.AddRelativeForce(Vector3.forward * Mathf.Min(38, (180 - Math.Abs(Vector3.Angle(transform.forward, LocalTargetDirection - this.transform.position * 1)) * 38 / 180)) * this.rigidbody.mass);//Need calculate size
         }
 
         void TargetSelector()
