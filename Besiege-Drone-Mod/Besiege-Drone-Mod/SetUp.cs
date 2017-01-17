@@ -286,6 +286,7 @@ namespace Blocks
                 foreach (FullyAIDrone FAD in AIDroneList)
                 {
                     FAD.currentTarget = Target;
+                    FAD.IgnoreIncoming = false;
                 }
             }
             if (ForceEngage.IsPressed)

@@ -160,7 +160,7 @@ namespace Blocks
                 }
                 return;
             }
-            
+
 
             Vector3 RelativeVelo = this.transform.InverseTransformDirection(this.rigidBody.velocity);
             this.rigidBody.AddRelativeForce(new Vector3(RelativeVelo.x * -15, RelativeVelo.y * -15, 0));
@@ -366,7 +366,11 @@ namespace Blocks
                 IAmSwitching = true;
                 TargetSelector();
             }
-            rigidbody.AddRelativeForce(Vector3.forward * Mathf.Min(38, (180 - Math.Abs(Vector3.Angle(transform.forward, LocalTargetDirection - this.transform.position * 1)) * 38 / 180)) * this.rigidbody.mass);//Need calculate size
+            rigidbody.AddRelativeForce(
+                Vector3.forward * Mathf.Min(
+                    38,
+                    (180 - Math.Abs(Vector3.Angle(transform.forward, LocalTargetDirection - this.transform.position * 1))) * 38 / 180) * this.rigidbody.mass
+                    );//Need calculate size
         }
 
         void WhenAssisting()
@@ -447,7 +451,11 @@ namespace Blocks
                 TargetDirection = (getCorrTorque(this.transform.forward, LocalTargetDirection - this.transform.position * 1, this.GetComponent<Rigidbody>(), 0.01f * size) * Mathf.Rad2Deg).normalized;
                 GetComponent<Rigidbody>().angularVelocity = (TargetDirection * RotatingSpeed);
             }
-            rigidbody.AddRelativeForce(Vector3.forward * Mathf.Min(38, (180 - Math.Abs(Vector3.Angle(transform.forward, LocalTargetDirection - this.transform.position * 1)) * 38 / 180)) * this.rigidbody.mass);//Need calculate size
+            rigidbody.AddRelativeForce(
+                            Vector3.forward * Mathf.Min(
+                                38,
+                                (180 - Math.Abs(Vector3.Angle(transform.forward, LocalTargetDirection - this.transform.position * 1))) * 38 / 180) * this.rigidbody.mass
+                                );//Need calculate size
         }
 
         void TargetSelector()
