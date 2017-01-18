@@ -126,6 +126,7 @@ namespace Blocks
                         if (RH.collider.isTrigger == false && RH.collider != Main && RH.collider != this.gameObject.GetComponent<Collider>())
                         {
                             HitPoints.Add(RH.point);
+                            break;
                             //Gizmos.DrawRay(rayray);
                         }
                     }
