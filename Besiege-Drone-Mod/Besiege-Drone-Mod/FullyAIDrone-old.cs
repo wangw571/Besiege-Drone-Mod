@@ -85,7 +85,7 @@ namespace Blocks
             {
                 foreach (DroneControlBlockBehavior DCBB in Machine.Active().SimulationMachine.GetComponentsInChildren<DroneControlBlockBehavior>())
                 {
-                    if (DCBB.DroneTag.Value == this.DroneTag.Value)
+                    if (DCBB.DroneTag.Value == this.DroneTag.Value) 
                     {
                         DCBB.AIDroneList.Add(this);
                         MyControl = DCBB;
@@ -449,11 +449,14 @@ namespace Blocks
 
 
 
-                LocalForwardOrRight = 
-                    SqrDistanceToControl() >= Mathf.Pow(MyControl.OrbitRadius.Value, 2) ?
-                    LocalForwardOrRight = this.transform.forward :
+                if (SqrDistanceToControl() >= Mathf.Pow(MyControl.OrbitRadius.Value, 2))
+                {
+                    LocalForwardOrRight = this.transform.forward;
+                }
+                else
+                {
                     LocalForwardOrRight = this.transform.right;
-
+                }
                 TargetDirection = (getCorrTorque(LocalForwardOrRight, LocalTargetDirection - this.transform.position * 1, this.GetComponent<Rigidbody>(), 0.01f * size) * Mathf.Rad2Deg).normalized;
 
 

@@ -119,7 +119,7 @@ namespace Blocks
         protected Block ControlBlock = new Block()
             .ID(576)
             .BlockName("Drone Controller Block")
-            .Obj(new List<Obj> { new Obj("DroneColtroller.obj", //Obj
+            .Obj(new List<Obj> { new Obj("DroneController.obj", //Obj
                                          "DroneController.png", //贴图
                                          new VisualOffset(new Vector3(1f, 1f, 1f), //Scale
                                                           new Vector3(0f, 0f, 0f), //Position
@@ -172,7 +172,7 @@ namespace Blocks
         MMenu DroneAIType;
         MMenu DroneSize;
         MMenu Difficulty;
-        MSlider OrbitRadius;
+        public MSlider OrbitRadius;
         //MMenu DroneWeapon;
         MSlider DroneAmount;
         MToggle ContinousSpawn;
@@ -264,6 +264,12 @@ namespace Blocks
                                     continue;
                                 }
                             }
+                            Engaging = true;
+                            foreach (FullyAIDrone FAD in AIDroneList)
+                            {
+                                FAD.currentTarget = Target;
+                                FAD.IgnoreIncoming = false;
+                            }
                             break;
                         }
                     }
@@ -283,11 +289,6 @@ namespace Blocks
                 //        }
                 //    }
                 //}
-                foreach (FullyAIDrone FAD in AIDroneList)
-                {
-                    FAD.currentTarget = Target;
-                    FAD.IgnoreIncoming = false;
-                }
             }
             if (ForceEngage.IsPressed)
             {
@@ -307,15 +308,15 @@ namespace Blocks
                                     continue;
                                 }
                             }
+                            Engaging = true;
+                            foreach (FullyAIDrone FAD in AIDroneList)
+                            {
+                                FAD.currentTarget = Target;
+                                FAD.IgnoreIncoming = true;
+                            }
                             break;
                         }
                     }
-                }
-
-                foreach (FullyAIDrone FAD in AIDroneList)
-                {
-                    FAD.currentTarget = Target;
-                    FAD.IgnoreIncoming = true;
                 }
             }
             if (Recall.IsPressed)
@@ -335,7 +336,6 @@ namespace Blocks
 
         protected override void OnSimulateFixedUpdate()
         {
-
             //FAD.targetPoint = RelativeLeavePositions[AIDroneList.IndexOf(FAD)];
             if (!Engaging)
             {
@@ -347,50 +347,51 @@ namespace Blocks
             }
         }
 
-        public Vector3 PleaseGiveMeNewOrbitPoint(Vector3 NowPoistion, Vector3 MyVeloDirection, bool GiveMeRandom)
-        {
-            Vector3 Relatived = this.transform.InverseTransformPoint(NowPoistion);
-            Vector3 Returner = Vector3.zero;
-            float DroneRelativeAngleX = Vector3.Angle(transform.forward, new Vector3(Relatived.x, 0, Relatived.z));
-            float DroneRelativeAngleY = Vector3.Angle(transform.forward, new Vector3(0, Relatived.y, Relatived.z));
-            if (!GiveMeRandom)
-            {
-                Vector3 one = EulerToDirection(DroneRelativeAngleX + 15, DroneRelativeAngleY + 15) * OrbitRadius.Value;
-                Vector3 two = EulerToDirection(DroneRelativeAngleX + 15, DroneRelativeAngleY - 15) * OrbitRadius.Value;
-                Vector3 three = EulerToDirection(DroneRelativeAngleX - 15, DroneRelativeAngleY + 15) * OrbitRadius.Value;
-                Vector3 four = EulerToDirection(DroneRelativeAngleX - 15, DroneRelativeAngleY - 15) * OrbitRadius.Value;
-                //Vector3.Min(Vector3.Min(Returner - one, Returner - two), Vector3.Min(Returner - three, Returner - four));
-                if(Vector3.SqrMagnitude((Relatived + MyVeloDirection) - four) > Vector3.SqrMagnitude((Relatived + MyVeloDirection) - three))
-                {
-                    Returner = three;
-                }
-                else if(Vector3.SqrMagnitude((Relatived + MyVeloDirection) - three) > Vector3.SqrMagnitude((Relatived + MyVeloDirection) - two))
-                {
-                    Returner = two;
-                }
-                else if (Vector3.SqrMagnitude((Relatived + MyVeloDirection) - two) > Vector3.SqrMagnitude((Relatived + MyVeloDirection) - one))
-                {
-                    Returner = one;
-                }
-                else if (Vector3.SqrMagnitude((Relatived + MyVeloDirection) - one) > Vector3.SqrMagnitude((Relatived + MyVeloDirection) - four))
-                {
-                    Returner = four;
-                }
-                //Returner = EulerToDirection(UnityEngine.Random.value * 360 - 180, 15) * OrbitRadius.Value;
-            }
-            else
-            {
-                Returner = EulerToDirection(UnityEngine.Random.value * 360 - 180, UnityEngine.Random.value * 720 - 360) * OrbitRadius.Value;
-            }
+        //public Vector3 PleaseGiveMeNewOrbitPoint(Vector3 NowPoistion, Vector3 MyVeloDirection, bool GiveMeRandom)
+        //{
+        //    Vector3 Relatived = this.transform.InverseTransformPoint(NowPoistion);
+        //    Vector3 Returner = Vector3.zero;
+        //    float DroneRelativeAngleX = Vector3.Angle(transform.forward, new Vector3(Relatived.x, 0, Relatived.z));
+        //    float DroneRelativeAngleY = Vector3.Angle(transform.forward, new Vector3(0, Relatived.y, Relatived.z));
+        //    if (!GiveMeRandom)
+        //    {
+        //        Vector3 one = EulerToDirection(DroneRelativeAngleX + 15, DroneRelativeAngleY + 15) * OrbitRadius.Value;
+        //        Vector3 two = EulerToDirection(DroneRelativeAngleX + 15, DroneRelativeAngleY - 15) * OrbitRadius.Value;
+        //        Vector3 three = EulerToDirection(DroneRelativeAngleX - 15, DroneRelativeAngleY + 15) * OrbitRadius.Value;
+        //        Vector3 four = EulerToDirection(DroneRelativeAngleX - 15, DroneRelativeAngleY - 15) * OrbitRadius.Value;
+        //        //Vector3.Min(Vector3.Min(Returner - one, Returner - two), Vector3.Min(Returner - three, Returner - four));
+        //        if(Vector3.SqrMagnitude((Relatived + MyVeloDirection) - four) > Vector3.SqrMagnitude((Relatived + MyVeloDirection) - three))
+        //        {
+        //            Returner = three;
+        //        }
+        //        else if(Vector3.SqrMagnitude((Relatived + MyVeloDirection) - three) > Vector3.SqrMagnitude((Relatived + MyVeloDirection) - two))
+        //        {
+        //            Returner = two;
+        //        }
+        //        else if (Vector3.SqrMagnitude((Relatived + MyVeloDirection) - two) > Vector3.SqrMagnitude((Relatived + MyVeloDirection) - one))
+        //        {
+        //            Returner = one;
+        //        }
+        //        else if (Vector3.SqrMagnitude((Relatived + MyVeloDirection) - one) > Vector3.SqrMagnitude((Relatived + MyVeloDirection) - four))
+        //        {
+        //            Returner = four;
+        //        }
+        //        //Returner = EulerToDirection(UnityEngine.Random.value * 360 - 180, 15) * OrbitRadius.Value;
+        //    }
+        //    else
+        //    {
+        //        Returner = EulerToDirection(UnityEngine.Random.value * 360 - 180, UnityEngine.Random.value * 720 - 360) * OrbitRadius.Value;
+        //    }
 
-            return Returner;
-        }
-        Vector3 EulerToDirection(float Elevation, float Heading)
-        {
-            float elevation = Elevation * Mathf.Deg2Rad;
-            float heading = Heading * Mathf.Deg2Rad;
-            return new Vector3(Mathf.Cos(elevation) * Mathf.Sin(heading), Mathf.Sin(elevation), Mathf.Cos(elevation) * Mathf.Cos(heading));
-        }
+        //    return Returner;
+        //}
+
+        //Vector3 EulerToDirection(float Elevation, float Heading)
+        //{
+        //    float elevation = Elevation * Mathf.Deg2Rad;
+        //    float heading = Heading * Mathf.Deg2Rad;
+        //    return new Vector3(Mathf.Cos(elevation) * Mathf.Sin(heading), Mathf.Sin(elevation), Mathf.Cos(elevation) * Mathf.Cos(heading));
+        //}
         protected void LogFo()
         {
             Debug.Log("fofo");

@@ -28,7 +28,7 @@ namespace Blocks
         protected IncomingDetectionScript IDS;
         public bool IgnoreIncoming = false;
         protected Rigidbody rigidBody;
-        protected bool NotEvenHavingAJoint = false;
+        protected bool NotEvenHavingAJoint = false; 
         protected bool NotEvenHavingAFireTag = false;
 
         public float HitPoints;
@@ -71,10 +71,10 @@ namespace Blocks
             return newPosition;
         }
 
-        protected Vector3 calculateNoneLinearTrajectory(float gunVelocity, float AirDrag, Vector3 gunPosition, float TargetVelocity, Vector3 TargetPosition, Vector3 TargetDirection, Vector3 hitPoint, float G, float accuracy, float diff)
+        protected Vector3 calculateNoneLinearTrajectory(float gunVelocity, float AirDrag, Vector3 gunPosition, float TargetVelocity, Vector3 TargetPosition, Vector3 TargetDirection, Vector3 hitPoint, float Grav, float accuracy, float diff)
         {
             iterativeCount++;
-            if (iterativeCount > 512) { iterativeCount = 0; return hitPoint; }
+            if (iterativeCount > 128) { iterativeCount = 0; return hitPoint; }
             if (hitPoint == Vector3.zero || gunVelocity < 1)
             {
                 return TargetPosition;
@@ -85,11 +85,11 @@ namespace Blocks
             float currentCalculatedDistance = (hitPoint - gunPosition).magnitude;
 
             float b2M4ac = gunVelocity * gunVelocity - 4 * AirDrag * currentCalculatedDistance;
-            if (b2M4ac < 0) { /*Debug.Log("Nan!!!" + (gunVelocity * gunVelocity - 2 * AirDrag * currentCalculatedDistance));*/ return TargetPosition; }
+            if (b2M4ac < 0) { return TargetPosition; }
             float V = (float)Math.Sqrt(b2M4ac);
             float X = localHitPoint.z;//z为前方
             float Y = localHitPoint.y;
-            Vector2 TT = formulaProjectile(X, Y, V, G);
+            Vector2 TT = formulaProjectile(X, Y, V, Grav);
             if (TT == Vector2.zero)
             {
                 iterativeCount = 0;
@@ -114,7 +114,7 @@ namespace Blocks
                 iterativeCount = 0;
                 return newHitPoint;
             }
-            return calculateNoneLinearTrajectory(gunVelocity, AirDrag, gunPosition, TargetVelocity, TargetPosition, TargetDirection, newHitPoint, G, accuracy, diff1);
+            return calculateNoneLinearTrajectory(gunVelocity, AirDrag, gunPosition, TargetVelocity, TargetPosition, TargetDirection, newHitPoint, Grav, accuracy, diff1);
         }
         protected Vector3 calculateNoneLinearTrajectoryWithAccelerationPrediction(float gunVelocity, float AirDrag, Vector3 gunPosition, float TargetVelocity, float targetAcceleration, Vector3 TargetPosition, Vector3 TargetDirection, Vector3 hitPoint, float G, float accuracy, float diff)
         {
@@ -130,7 +130,7 @@ namespace Blocks
             float currentCalculatedDistance = (hitPoint - gunPosition).magnitude;
 
             float b2M4ac = gunVelocity * gunVelocity - 4 * AirDrag * currentCalculatedDistance;
-            if (b2M4ac < 0) { /*Debug.Log("Nan!!!" + (gunVelocity * gunVelocity - 2 * AirDrag * currentCalculatedDistance));*/ return currentTarget.transform.position; }
+            if (b2M4ac < 0) { return currentTarget.transform.position; }
             float V = (float)Math.Sqrt(b2M4ac);
             float X = localHitPoint.z;//z为前方
             float Y = localHitPoint.y;
@@ -314,7 +314,7 @@ namespace Blocks
         }
 
 
-        protected Vector3 DroneDirectionIndicator(Vector3 LocalTargetDirection,Vector3 CurrentTargetPoistion, float CalculationSpeed)
+        protected Vector3 DroneDirectionIndicator(Vector3 CurrentTargetPoistion, float CalculationSpeed)
         {
             float targetVelo = targetVeloAveraged.magnitude;
             Vector3 TargetDirection = targetVeloAveraged.normalized;
@@ -347,7 +347,7 @@ namespace Blocks
                     size * 精度 + 10 * size,
                     float.PositiveInfinity
                     );*/
-            LocalTargetDirection = calculateNoneLinearTrajectory(
+            Vector3 LocalTargetDirection = calculateNoneLinearTrajectory(
                 CalculationSpeed,
                 0.2f,
                 this.transform.position,
